@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import api from "../../api/axios";
+import { iniciarSesion } from "../../api/authApi";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -11,10 +11,8 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await api.post("/token/", { username, password });
-      localStorage.setItem("access", data.access);
-      localStorage.setItem("refresh", data.refresh);
-      navigate("/dashboard");
+      await iniciarSesion(username, password);
+      navigate("/inicio");
     } catch {
       setError("Usuario o contraseña incorrectos");
     }
