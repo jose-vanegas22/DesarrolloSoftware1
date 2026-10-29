@@ -143,7 +143,7 @@ REST_FRAMEWORK = {
 # Aqui se encuentra la configuracion JWT donde se define el tiempo de vida del token de acceso y del token de refresco
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=120),
+    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=120),
 }
 
 # Aqui añadimos la configuracion CORS
