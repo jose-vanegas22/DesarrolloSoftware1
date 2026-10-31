@@ -121,7 +121,7 @@ La documentación interactiva de la API está en http://127.0.0.1:8000/api/docs/
 
 | Método | URL | Descripción |
 |---|---|---|
-| POST | `/api/token/` | Recibe `correo` y `password` y devuelve los tokens `access` y `refresh` |
+| POST | `/api/token/` | Recibe correo, password y captcha (token de reCAPTCHA) y devuelve los tokens access y refresh. Tras 5 intentos fallidos, la cuenta se bloquea 15 minutos.
 | POST | `/api/token/refresh/` | Recibe `refresh` y devuelve un `access` nuevo |
 
 El token `access` dura 15 minutos y el `refresh` 120 minutos. Los demás endpoints requieren el header `Authorization: Bearer <access>`.

@@ -31,6 +31,8 @@ class Usuario(AbstractBaseUser): # Heredamos de AbstractBaseUser para crear un m
     es_autor = models.BooleanField(default=False)
     correo_verificado = models.BooleanField(default=False)
     activo = models.BooleanField(default=True)
+    intentos_fallidos = models.PositiveSmallIntegerField(default=0) # Nuevo campo que agregamos para contar los intentos fallidos de inicio de sesión
+    bloqueado_hasta = models.DateTimeField(null=True, blank=True) # Nuevo campo que agregamos para almacenar la fecha y hora hasta la cual el usuario está bloqueado
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 

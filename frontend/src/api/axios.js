@@ -16,7 +16,7 @@ api.interceptors.response.use(
     const original = error.config;
     const refresh = localStorage.getItem("refresh");
 
-    if (error.response?.status === 401 && refresh && !original._retry) {
+    if (error.response?.status === 401 && refresh && !original._retry && !original.url?.startsWith("/token/")) {
       original._retry = true;
       try {
         const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/token/refresh/`, { refresh });

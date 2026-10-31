@@ -5,8 +5,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import Usuario
 from .permissions import PermisoUsuarios, es_gestor
-from .serializers import DatosPersonalesSerializer, UsuarioSerializer
+from .serializers import DatosPersonalesSerializer, UsuarioSerializer, LoginSerializer
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 
 
 @extend_schema_view(
@@ -63,3 +65,8 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
+
