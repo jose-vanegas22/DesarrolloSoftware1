@@ -147,6 +147,7 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(minutes=120),
+    'UPDATE_LAST_LOGIN': True, # Para que se actualice la fecha de ultimo login del usuario cada vez que se refresque el token
 }
 
 # Aqui añadimos la configuracion CORS
@@ -161,3 +162,8 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+
+# Aqui añadimos la configuracion de reCAPTCHA
+RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY')
+LOGIN_MAX_INTENTOS = 5
+LOGIN_MINUTOS_BLOQUEO = 15

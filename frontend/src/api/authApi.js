@@ -1,7 +1,7 @@
 import api from "./axios";
 
-export const iniciarSesion = async (correo, password) => {
-  const { data } = await api.post("/token/", { correo, password });
+export const iniciarSesion = async (correo, password, captcha) => {
+  const { data } = await api.post("/token/", { correo, password, captcha });
   localStorage.setItem("access", data.access);
   localStorage.setItem("refresh", data.refresh);
 };

@@ -1,6 +1,14 @@
+from datetime import timedelta
+from math import ceil
+from django.conf import settings
 from django.contrib.auth import password_validation
+from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import Usuario
+from .services import verificar_captcha
+
 
 
 class UsuarioSerializer(serializers.ModelSerializer): # Serializer para el modelo de usuario personalizado, que se utilizará para serializar y deserializar los datos del usuario en las vistas de la API
@@ -51,3 +59,42 @@ class DatosPersonalesSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = ['id', 'correo', 'nombres', 'apellidos', 'telefono', 'es_administrador', 'es_comite', 'es_autor']
         read_only_fields = ['id', 'correo', 'es_administrador', 'es_comite', 'es_autor']
+
+
+class LoginSerializer(TokenObtainPairSerializer): # Heredamos el token para añadirle nuevas validaciones
+    captcha = serializers.CharField(write_only=True) # Captcha como nuevo campos obligatorio
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        ip = request.META.get('REMOTE_ADDR') if request else None
+        if not verificar_captcha(attrs['captcha'], ip):
+            raise serializers.ValidationError({'captcha': 'La verificación CAPTCHA no es válida.'})
+
+        usuario = Usuario.objects.filter(correo=attrs['correo']).first()
+        ahora = timezone.now()
+
+        # Revisa si la cuenta no esta bloqueada o que
+        if usuario and usuario.bloqueado_hasta and usuario.bloqueado_hasta > ahora:
+            minutos = ceil((usuario.bloqueado_hasta - ahora).total_seconds() / 60)
+            raise AuthenticationFailed(
+                f'Cuenta bloqueada por demasiados intentos fallidos. Intenta de nuevo en {minutos} minuto(s).'
+            )
+
+        try:
+            datos = super().validate(attrs) # Revisa el correo y la contraseña para generar los tokens
+        except AuthenticationFailed:
+            if usuario:
+                usuario.intentos_fallidos += 1
+                if usuario.intentos_fallidos >= settings.LOGIN_MAX_INTENTOS:
+                    usuario.bloqueado_hasta = ahora + timedelta(minutes=settings.LOGIN_MINUTOS_BLOQUEO)
+                    usuario.intentos_fallidos = 0
+                usuario.save(update_fields=['intentos_fallidos', 'bloqueado_hasta'])
+            raise
+
+        if self.user.intentos_fallidos or self.user.bloqueado_hasta:
+            self.user.intentos_fallidos = 0
+            self.user.bloqueado_hasta = None
+            self.user.save(update_fields=['intentos_fallidos', 'bloqueado_hasta'])
+
+        return datos
+
