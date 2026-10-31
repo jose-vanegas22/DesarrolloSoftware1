@@ -1,10 +1,11 @@
 import api from "./axios";
 
-export const iniciarSesion = async (username, password) => {
-  const { data } = await api.post("/token/", { username, password });
+export const iniciarSesion = async (correo, password) => {
+  const { data } = await api.post("/token/", { correo, password });
   localStorage.setItem("access", data.access);
   localStorage.setItem("refresh", data.refresh);
 };
+
 
 export const cerrarSesion = () => {
   localStorage.removeItem("access");

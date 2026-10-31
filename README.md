@@ -118,7 +118,7 @@ python manage.py createsuperuser
 
 | Método | URL | Descripción |
 |---|---|---|
-| POST | `/api/token/` | Recibe `username` y `password` y devuelve los tokens `access` y `refresh` |
+| POST | `/api/token/` | Recibe `correo` y `password` y devuelve los tokens `access` y `refresh` |
 | POST | `/api/token/refresh/` | Recibe `refresh` y devuelve un `access` nuevo |
 
 El token `access` dura 15 minutos y el `refresh` 120 minutos. Los demás endpoints requieren el header `Authorization: Bearer <access>`.
