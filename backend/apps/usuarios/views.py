@@ -6,13 +6,23 @@ from rest_framework.response import Response
 from .models import Usuario
 from .permissions import PermisoUsuarios, es_gestor
 from .serializers import DatosPersonalesSerializer, UsuarioSerializer
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 
 
+@extend_schema_view(
+    list=extend_schema(parameters=[
+        OpenApiParameter('rol', str, enum=['administrador', 'comite', 'autor'], description='Filtra por rol'),
+        OpenApiParameter('activo', bool, description='Filtra por usuarios activos o inactivos'),
+        OpenApiParameter('buscar', str, description='Busca en nombres, apellidos y correo'),
+    ])
+)
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
     permission_classes = [IsAuthenticated, PermisoUsuarios] # Primero exigimos sesion iniciada y luego revisamos si es autor o gestor, si es autor solo puede ver y editar su propio perfil, si es gestor puede ver y editar cualquier perfil
 
     def get_serializer_class(self): # Elige el serializer segun quien hace la peticion
+        if getattr(self, 'swagger_fake_view', False):
+            return UsuarioSerializer
         if self.action == 'perfil':
             return DatosPersonalesSerializer
         if self.action in ('update', 'partial_update') and not es_gestor(self.request.user):
