@@ -36,9 +36,9 @@ class Usuario(AbstractBaseUser): # Heredamos de AbstractBaseUser para crear un m
 
     objects = UsuarioManager()
 
-    USERNAME_FIELD = 'correo'
-    EMAIL_FIELD = 'correo'
-    REQUIRED_FIELDS = ['nombres', 'apellidos']
+    USERNAME_FIELD = 'correo' # El campo que se utilizará para autenticar al usuario
+    EMAIL_FIELD = 'correo' # El campo que se utilizará para enviar correos electrónicos al usuario
+    REQUIRED_FIELDS = ['nombres', 'apellidos'] # Los campos que se requerirán al crear un superusuario
 
     class Meta:
         ordering = ['nombres', 'apellidos']
