@@ -114,6 +114,9 @@ Para iniciar sesión necesitas un usuario. Puedes crear uno con:
 python manage.py createsuperuser
 ```
 
+La documentación interactiva de la API está en http://127.0.0.1:8000/api/docs/ (Swagger).
+
+
 ## Endpoints de autenticación
 
 | Método | URL | Descripción |

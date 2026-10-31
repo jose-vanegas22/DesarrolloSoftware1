@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'drf_spectacular',
     'apps.usuarios',
 ]
 
@@ -139,6 +140,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Aqui se encuentra la configuracion JWT donde se define el tiempo de vida del token de acceso y del token de refresco
@@ -151,3 +153,11 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
 ]
+
+# Para la documentacion con el Swagger UI
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API Conecta',
+    'DESCRIPTION': 'API para la gestión de conferencias.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
