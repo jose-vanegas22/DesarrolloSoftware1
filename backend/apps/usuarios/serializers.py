@@ -53,12 +53,50 @@ class UsuarioSerializer(serializers.ModelSerializer): # Serializer para el model
             usuario.save()
         return usuario
 
+
+
+
 # Esta clase seria para lo que usa un usuario normal en nuestro caso seria autor
 class DatosPersonalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
         fields = ['id', 'correo', 'nombres', 'apellidos', 'telefono', 'es_administrador', 'es_comite', 'es_autor']
         read_only_fields = ['id', 'correo', 'es_administrador', 'es_comite', 'es_autor']
+
+
+
+
+# Para cuando los usuarios autores se registran de manera
+class RegistroSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    captcha = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Usuario
+        fields = ['id', 'correo', 'password', 'nombres', 'apellidos', 'telefono', 'captcha'] # No incluye roles, ni tampoco activo si alguien los envia pues simplemente los ignora
+        read_only_fields = ['id']
+
+    def validate_password(self, value):
+        password_validation.validate_password(value)
+        return value
+
+    def validate_captcha(self, value):
+        request = self.context.get('request')
+        ip = request.META.get('REMOTE_ADDR') if request else None
+        if not verificar_captcha(value, ip): # Reutiliza verificar_captcha de services
+            raise serializers.ValidationError('La verificación CAPTCHA no es válida.')
+        return value
+
+    def create(self, validated_data):
+        validated_data.pop('captcha') # Antes de crear el usuario saca el captcha porque no pertenece al usuario
+        password = validated_data.pop('password') # Saca la contraseña para no devolverla
+        return Usuario.objects.create_user(password=password, es_autor=True, **validated_data) # Crea el usuario como autor de manera fija
+
+
+
+
+
+
 
 
 class LoginSerializer(TokenObtainPairSerializer): # Heredamos el token para añadirle nuevas validaciones

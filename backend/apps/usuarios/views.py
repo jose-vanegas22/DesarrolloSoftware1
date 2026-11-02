@@ -1,32 +1,59 @@
 from django.db.models import Q
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from .models import Usuario
 from .permissions import PermisoUsuarios, es_gestor
-from .serializers import DatosPersonalesSerializer, UsuarioSerializer, LoginSerializer
+from .serializers import DatosPersonalesSerializer, UsuarioSerializer, LoginSerializer, RegistroSerializer
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 
 
 @extend_schema_view(
-    list=extend_schema(parameters=[
-        OpenApiParameter('rol', str, enum=['administrador', 'comite', 'autor'], description='Filtra por rol'),
-        OpenApiParameter('activo', bool, description='Filtra por usuarios activos o inactivos'),
-        OpenApiParameter('buscar', str, description='Busca en nombres, apellidos y correo'),
-    ])
+    list=extend_schema(
+        summary='Listar usuarios',
+        description='Disponible para cualquier usuario con sesión. Se puede filtrar por rol, estado y texto.',
+        parameters=[
+            OpenApiParameter('rol', str, enum=['administrador', 'comite', 'autor'], description='Filtra por rol'),
+            OpenApiParameter('activo', bool, description='Filtra por usuarios activos o inactivos'),
+            OpenApiParameter('buscar', str, description='Busca en nombres, apellidos y correo'),
+        ],
+    ),
+    create=extend_schema(
+        summary='Crear usuario',
+        description='Solo administradores y miembros del comité. El usuario debe tener al menos un rol.',
+    ),
+    retrieve=extend_schema(
+        summary='Consultar un usuario',
+        description='Disponible para cualquier usuario con sesión.',
+    ),
+    update=extend_schema(
+        summary='Actualizar usuario (completo)',
+        description='Administradores y comité pueden editar a cualquier usuario. '
+                    'Los demás solo pueden editar sus propios nombres, apellidos y teléfono.',
+    ),
+    partial_update=extend_schema(
+        summary='Actualizar usuario (parcial)',
+        description='Mismas reglas que la actualización completa, pero solo se envían los campos a cambiar.',
+    ),
+    destroy=extend_schema(
+        summary='Borrar usuario',
+        description='Solo administradores y miembros del comité.',
+    ),
 )
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
     permission_classes = [IsAuthenticated, PermisoUsuarios] # Primero exigimos sesion iniciada y luego revisamos si es autor o gestor, si es autor solo puede ver y editar su propio perfil, si es gestor puede ver y editar cualquier perfil
 
-    def get_serializer_class(self): # Elige el serializer segun quien hace la peticion
-        if getattr(self, 'swagger_fake_view', False):
-            return UsuarioSerializer
+    def get_serializer_class(self): # Sirve para guiar a cual seriaalizers llegar
+        if self.action == 'registro':
+            return RegistroSerializer
         if self.action == 'perfil':
             return DatosPersonalesSerializer
+        if getattr(self, 'swagger_fake_view', False):
+            return UsuarioSerializer
         if self.action in ('update', 'partial_update') and not es_gestor(self.request.user):
             return DatosPersonalesSerializer
         return UsuarioSerializer
@@ -55,6 +82,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         return usuarios
 
+    @extend_schema(methods=['GET'], summary='Ver mi perfil',
+                   description='Devuelve los datos y roles del usuario que inició sesión.')
+    @extend_schema(methods=['PATCH'], summary='Editar mi perfil',
+                   description='Permite cambiar nombres, apellidos y teléfono del usuario que inició sesión.')
     @action(detail=False, methods=['get', 'patch']) # Permite a los usuarios ver y editar su propio perfil, y a los gestores ver y editar cualquier perfil
     def perfil(self, request):
         if request.method == 'GET':
@@ -66,7 +97,28 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
+    # endpoint para que las personas creen usuarios pero solo como autores
+    @extend_schema(
+        summary='Registrarse como autor',
+        description='Endpoint público (no requiere sesión). Crea un usuario con rol autor; '
+                    'los roles enviados se ignoran. Requiere el token de reCAPTCHA en el campo captcha.',
+        responses={201: RegistroSerializer},
+    )
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], authentication_classes=[])
+    def registro(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
+@extend_schema_view(
+    post=extend_schema(
+        summary='Iniciar sesión',
+        description='Recibe correo, contraseña y token de reCAPTCHA, y devuelve los tokens access y refresh. '
+                    'Tras 5 intentos fallidos, la cuenta se bloquea 15 minutos.',
+    )
+)
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
