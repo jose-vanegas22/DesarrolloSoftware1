@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import Usuario
+from .models import Usuario, ROLES
 from .services import verificar_captcha
 
 
@@ -102,6 +102,12 @@ class RegistroSerializer(serializers.ModelSerializer):
 class LoginSerializer(TokenObtainPairSerializer): # Heredamos el token para añadirle nuevas validaciones
     captcha = serializers.CharField(write_only=True) # Captcha como nuevo campos obligatorio
 
+
+    @classmethod # Sirve para agregarle el dato rol_activo
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['rol_activo'] = user.rol_inicial
+        return token
     def validate(self, attrs):
         request = self.context.get('request')
         ip = request.META.get('REMOTE_ADDR') if request else None
@@ -134,5 +140,24 @@ class LoginSerializer(TokenObtainPairSerializer): # Heredamos el token para aña
             self.user.bloqueado_hasta = None
             self.user.save(update_fields=['intentos_fallidos', 'bloqueado_hasta'])
 
+        # Asi la respuesta del login incluye los roles y el rol activo y el front sabe si debe mostrar la pantalla para elegir el rol
+        datos['roles'] = self.user.roles
+        datos['rol_activo'] = self.user.rol_inicial
         return datos
 
+
+# Valida lo que lleva al elegir el rol
+class SeleccionarRolSerializer(serializers.Serializer):
+    rol = serializers.ChoiceField(choices=ROLES) # Solo acepta administrador, comite o autor
+
+    def validate_rol(self, value): # Verifica que el usuario tenga ese rol
+        if value not in self.context['request'].user.roles:
+            raise serializers.ValidationError('No tienes este rol.')
+        return value
+
+# Solo sirve para que swagger documente la forma de la respuesta del login y de la seleccion del rol
+class SesionSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField()
+    roles = serializers.ListField(child=serializers.CharField())
+    rol_activo = serializers.CharField(allow_null=True)

@@ -1,6 +1,7 @@
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 
+ROLES = ('administrador', 'comite', 'autor')
 
 class UsuarioManager(BaseUserManager):
     use_in_migrations = True
@@ -51,6 +52,14 @@ class Usuario(AbstractBaseUser): # Heredamos de AbstractBaseUser para crear un m
     @property
     def is_active(self):
         return self.activo
+
+    @property
+    def roles(self): # Devuelve los roles del usuario
+        return [rol for rol in ROLES if getattr(self, f'es_{rol}')]
+
+    @property
+    def rol_inicial(self): # Si tiene un solo rol devuelve ese, si tienes varios None
+        return self.roles[0] if len(self.roles) == 1 else None
 
 
 class CodigoRecuperacion(models.Model):
