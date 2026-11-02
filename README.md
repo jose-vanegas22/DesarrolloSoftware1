@@ -66,6 +66,7 @@ Copy-Item .env.example .env
 Abre `backend/.env` y completa los valores:
 
 - `DB_USER`, `DB_PASSWORD` y `DB_HOST`: pídeselos al responsable del proyecto por un medio privado.
+- `RECAPTCHA_SECRET_KEY`: para desarrollo usa la clave de prueba de Google `6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe`.
 - `SECRET_KEY`: genera una propia con:
 
   ```powershell
@@ -117,12 +118,14 @@ python manage.py createsuperuser
 La documentación interactiva de la API está en http://127.0.0.1:8000/api/docs/ (Swagger).
 
 
-## Endpoints de autenticación
+## Endpoints publicos
 
 | Método | URL | Descripción |
 |---|---|---|
-| POST | `/api/token/` | Recibe correo, password y captcha (token de reCAPTCHA) y devuelve los tokens access y refresh. Tras 5 intentos fallidos, la cuenta se bloquea 15 minutos.
+| POST | `/api/token/` | Recibe `correo`, `password` y `captcha` (token de reCAPTCHA) y devuelve los tokens `access` y `refresh`. Tras 5 intentos fallidos, la cuenta se bloquea 15 minutos. |
 | POST | `/api/token/refresh/` | Recibe `refresh` y devuelve un `access` nuevo |
+| POST | `/api/usuarios/registro/` | Registro público de autores. Recibe `correo`, `password`, `nombres`, `apellidos`, `telefono` y `captcha` |
+
 
 El token `access` dura 15 minutos y el `refresh` 120 minutos. Los demás endpoints requieren el header `Authorization: Bearer <access>`.
 
@@ -133,6 +136,8 @@ El token `access` dura 15 minutos y el `refresh` 120 minutos. Los demás endpoin
 - **Base de datos:** las tablas se crean solo desde los modelos de Django (`makemigrations` + `migrate`), nunca desde Supabase. Como todos usamos la misma base de datos, avisa al grupo antes de aplicar migraciones nuevas.
 - **Frontend:** las páginas y componentes no usan axios directamente; llaman a funciones de `src/api/<modulo>Api.js`.
 - **Archivos `.env`:** nunca se suben a Git. Si agregas una variable nueva, agrégala también al `.env.example`.
+- **Swagger:** cada endpoint lleva `summary` (qué hace) y `description` (quién puede usarlo y reglas importantes) con `extend_schema`.
+
 
 ## Después de hacer `git pull`
 
