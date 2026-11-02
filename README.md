@@ -129,6 +129,15 @@ La documentación interactiva de la API está en http://127.0.0.1:8000/api/docs/
 
 El token `access` dura 15 minutos y el `refresh` 120 minutos. Los demás endpoints requieren el header `Authorization: Bearer <access>`.
 
+### Rol activo
+
+Un usuario puede tener varios roles (administrador, comité, autor), pero en cada sesión trabaja con uno solo: el **rol activo**, que viaja dentro del token JWT. **Los permisos dependen del rol activo.**
+
+- Si el usuario tiene **un solo rol**, el login lo deja como rol activo automáticamente.
+- Si tiene **varios**, el login responde `"rol_activo": null` y debe elegir uno con `POST /api/usuarios/seleccionar-rol/` (`{ "rol": "comite" }`). Esa respuesta trae tokens nuevos, que reemplazan a los anteriores.
+
+En el backend, el rol activo se obtiene con `obtener_rol_activo(request)` de `apps/usuarios/permissions.py`.
+
 ## Convenciones
 
 - **Idioma:** lo que es del negocio va en español (`Producto`, `cargarProductos`, `/api/productos/`); lo técnico del framework queda en inglés (`models.py`, `ProductoSerializer`, `ProductosPage`, `getProductos`). En el código no se usan tildes ni ñ.

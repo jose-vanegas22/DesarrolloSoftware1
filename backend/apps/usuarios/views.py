@@ -5,9 +5,18 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from .models import Usuario
 from .permissions import PermisoUsuarios, es_gestor
-from .serializers import DatosPersonalesSerializer, UsuarioSerializer, LoginSerializer, RegistroSerializer
+from .serializers import (
+    DatosPersonalesSerializer,
+    LoginSerializer,
+    RegistroSerializer,
+    SeleccionarRolSerializer,
+    SesionSerializer,
+    UsuarioSerializer,
+)
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 
 
@@ -48,13 +57,15 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, PermisoUsuarios] # Primero exigimos sesion iniciada y luego revisamos si es autor o gestor, si es autor solo puede ver y editar su propio perfil, si es gestor puede ver y editar cualquier perfil
 
     def get_serializer_class(self): # Sirve para guiar a cual seriaalizers llegar
+        if self.action == 'seleccionar_rol':
+            return SeleccionarRolSerializer
         if self.action == 'registro':
             return RegistroSerializer
         if self.action == 'perfil':
             return DatosPersonalesSerializer
         if getattr(self, 'swagger_fake_view', False):
             return UsuarioSerializer
-        if self.action in ('update', 'partial_update') and not es_gestor(self.request.user):
+        if self.action in ('update', 'partial_update') and not es_gestor(self.request):
             return DatosPersonalesSerializer
         return UsuarioSerializer
 
@@ -112,11 +123,34 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+    @extend_schema(
+        summary='Seleccionar rol activo',
+        description='Recibe uno de los roles del usuario y devuelve tokens nuevos con ese rol activo. '
+                    'Los permisos de la sesión dependen del rol activo.',
+        responses={200: SesionSerializer},
+    )
+    @action(detail=False, methods=['post'], url_path='seleccionar-rol', permission_classes=[IsAuthenticated])
+    def seleccionar_rol(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        refresh = RefreshToken.for_user(request.user)
+        refresh['rol_activo'] = serializer.validated_data['rol']
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'roles': request.user.roles,
+            'rol_activo': refresh['rol_activo'],
+        })
+
+
 @extend_schema_view(
     post=extend_schema(
         summary='Iniciar sesión',
         description='Recibe correo, contraseña y token de reCAPTCHA, y devuelve los tokens access y refresh. '
-                    'Tras 5 intentos fallidos, la cuenta se bloquea 15 minutos.',
+                    'Tras 5 intentos fallidos, la cuenta se bloquea 15 minutos.'
+                    'Si el usuario tiene un solo rol, queda como rol activo; si tiene varios, rol_activo es null '
+                    'y debe elegir uno en /api/usuarios/seleccionar-rol/.',
+        responses={200: SesionSerializer},
     )
 )
 class LoginView(TokenObtainPairView):
