@@ -1,0 +1,24 @@
+.rol-pagina {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+}
+
+.rol-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 440px;
+  padding: 32px;
+  border-radius: 22px;
+  background-color: var(--color-fondo);
+  box-shadow: var(--sombra-elevada);
+}
+
+.rol-tarjeta p {
+  margin: 0;
+  color: var(--color-texto-secundario);
+}
