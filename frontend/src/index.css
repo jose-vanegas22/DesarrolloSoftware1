@@ -1,0 +1,134 @@
+:root { /** Todos los colores que seran la base de nuestra aplicación */
+  --color-principal: #4a2a52;
+  --color-principal-oscuro: #3a2041;
+  --color-fondo: #f5f2ec;
+  --color-texto: #1f1b24;
+  --color-texto-secundario: #5f5866;
+  --color-borde: #d8d2c8;
+  --color-error: #b91c1c;
+  --color-exito: #15803d;
+
+  --sombra-elevada: 14px 14px 32px rgba(121, 105, 88, 0.22), -10px -10px 28px rgba(255, 255, 255, 0.9);
+  --sombra-suave: 4px 4px 10px rgba(121, 105, 88, 0.2), -4px -4px 10px rgba(255, 255, 255, 0.9);
+  --sombra-hundida: inset 3px 3px 6px rgba(121, 105, 88, 0.18), inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+}
+
+* { /** Hace que el ancho de cada elemento incluya su espacio interno y borde */
+  box-sizing: border-box;
+}
+
+body { /** Quita el margen que el navegador trae por defecto */
+  margin: 0;
+  font-family: "Plus Jakarta Sans", Arial, sans-serif;
+  color: var(--color-texto);
+  background-color: var(--color-fondo);
+}
+
+h1 { /** Estilo de los titulos */
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+a { /** Estilo de los enlaces */
+  color: var(--color-principal);
+}
+
+.campo { /** Da el mismo estilo a todos los campos de formulario */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.campo label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-texto-secundario);
+}
+
+.campo input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--color-texto);
+  background-color: var(--color-fondo);
+  box-shadow: var(--sombra-hundida);
+}
+
+.campo input::placeholder {
+  color: #7a7380;
+}
+
+.campo input:focus {
+  outline: 2px solid var(--color-principal);
+  outline-offset: 1px;
+}
+
+.boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid var(--color-principal);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.boton-principal {
+  color: #ffffff;
+  background-color: var(--color-principal);
+  box-shadow: var(--sombra-suave);
+}
+
+.boton-principal:hover:not(:disabled) {
+  background-color: var(--color-principal-oscuro);
+}
+
+.boton-principal:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.boton-secundario {
+  color: var(--color-principal);
+  background-color: var(--color-fondo);
+}
+
+.boton-secundario:hover {
+  background-color: #ece7de;
+}
+
+.boton:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-principal);
+  outline-offset: 2px;
+}
+
+.mensaje-error,
+.mensaje-exito {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.mensaje-error {
+  color: var(--color-error);
+}
+
+.mensaje-exito {
+  color: var(--color-exito);
+}

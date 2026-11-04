@@ -1,7 +1,9 @@
 import { Navigate } from "react-router";
-import { haySesion } from "../api/authApi";
+import { haySesion, obtenerRolActivo } from "../api/authApi";
 
-export default function RutaProtegida({ children }) {
-  return haySesion() ? children : <Navigate to="/login" />;
+export default function RutaProtegida({ children, requiereRol = true }) {
+  if (!haySesion()) return <Navigate to="/login" replace />;
+  if (requiereRol && !obtenerRolActivo()) return <Navigate to="/seleccionar-rol" replace />;
+  return children;
 }
 // Si hay sesion muestra la pantalla de inicio, si no hay sesion redirige a login

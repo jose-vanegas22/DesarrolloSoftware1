@@ -1,0 +1,201 @@
+/** Aplica para pantallas de pc */
+.acceso-pagina {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.acceso-tarjeta {
+  position: relative;
+  width: 100%;
+  max-width: 940px;
+  height: 680px;
+  overflow: hidden;
+  border-radius: 22px;
+  background-color: var(--color-fondo);
+  box-shadow: var(--sombra-elevada);
+}
+
+.acceso-contenido {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  width: 60%;
+  height: 100%;
+  padding: 32px 48px;
+  animation: acceso-aparecer 0.45s ease;
+}
+
+.acceso-tarjeta-registro .acceso-contenido {
+  left: 40%;
+}
+
+.acceso-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 40%;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+  background-color: #efebe3;
+  transition: transform 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.acceso-tarjeta-registro .acceso-panel {
+  transform: translateX(-150%);
+}
+
+.acceso-panel-icono {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  color: var(--color-principal);
+  background-color: var(--color-fondo);
+  box-shadow: var(--sombra-suave);
+}
+
+.acceso-panel-texto {
+  margin: 0;
+  font-weight: 600;
+}
+
+.acceso-marca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.acceso-logo {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: #ffffff;
+  background-color: var(--color-principal);
+}
+
+.acceso-pestanas {
+  display: none;
+}
+
+.acceso-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acceso-fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.acceso-olvido {
+  align-self: flex-end;
+  font-size: 0.8rem;
+  color: var(--color-texto-secundario);
+}
+
+.acceso-captcha {
+  display: flex;
+  justify-content: center;
+  min-height: 78px;
+}
+
+@keyframes acceso-aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/** Aplica a pantallas de hasta 900 px*/
+@media (max-width: 900px) {
+  .acceso-pagina {
+    display: block;
+    padding: 24px 16px;
+  }
+
+  .acceso-tarjeta {
+    max-width: 480px;
+    height: auto;
+    margin: 0 auto;
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  .acceso-contenido,
+  .acceso-tarjeta-registro .acceso-contenido {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 0;
+  }
+
+  .acceso-panel {
+    display: none;
+  }
+
+  .acceso-marca {
+    justify-content: center;
+  }
+
+  .acceso-pestanas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 12px;
+    background-color: #e9e4da;
+  }
+
+  .acceso-pestanas a {
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    border-radius: 9px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--color-texto-secundario);
+  }
+
+  .acceso-pestanas a.active {
+    color: var(--color-principal);
+    background-color: var(--color-fondo);
+    box-shadow: var(--sombra-suave);
+  }
+
+  .acceso-fila {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acceso-contenido {
+    animation: none;
+  }
+
+  .acceso-panel {
+    transition: none;
+  }
+}
