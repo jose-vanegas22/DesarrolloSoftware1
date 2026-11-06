@@ -1,0 +1,129 @@
+.menu-pagina {
+  display: flex;
+  min-height: 100vh;
+}
+
+.menu-lateral {
+  position: sticky;
+  top: 0;
+  flex: 0 0 240px;
+  height: 100vh;
+  padding: 20px 16px;
+  background-color: #efebe3;
+}
+
+.menu-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.menu-marca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.menu-logo {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: #ffffff;
+  background-color: var(--color-principal);
+}
+
+.menu-boton {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  font-size: 1.2rem;
+  color: var(--color-principal);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.menu-contenido {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 44px);
+  margin-top: 14px;
+}
+
+.menu-rol {
+  margin: 0 0 16px;
+  font-size: 0.8rem;
+  color: var(--color-texto-secundario);
+}
+
+.menu-opciones {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.menu-opciones a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--color-texto-secundario);
+}
+
+.menu-opciones a:hover {
+  background-color: #e7e1d7;
+}
+
+.menu-opciones a.active {
+  color: #ffffff;
+  background-color: var(--color-principal);
+}
+
+.menu-principal {
+  flex: 1;
+  min-width: 0;
+  padding: 32px;
+}
+
+@media (max-width: 900px) {
+  .menu-pagina {
+    display: block;
+  }
+
+  .menu-lateral {
+    z-index: 1;
+    height: auto;
+    padding: 12px 16px;
+  }
+
+  .menu-boton {
+    display: block;
+  }
+
+  .menu-contenido {
+    display: none;
+    height: auto;
+  }
+
+  .menu-contenido-abierto {
+    display: flex;
+  }
+
+  .menu-opciones {
+    margin-bottom: 12px;
+  }
+
+  .menu-principal {
+    padding: 24px 16px;
+  }
+}
