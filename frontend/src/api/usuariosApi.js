@@ -4,3 +4,5 @@ export const getUsuarios = (filtros) => api.get("/usuarios/", { params: filtros 
 export const createUsuario = (datos) => api.post("/usuarios/", datos);
 export const updateUsuario = (id, datos) => api.patch(`/usuarios/${id}/`, datos);
 export const deleteUsuario = (id) => api.delete(`/usuarios/${id}/`);
+export const getPerfil = () => api.get("/usuarios/perfil/");
+export const updatePerfil = (datos) => api.patch("/usuarios/perfil/", datos);
