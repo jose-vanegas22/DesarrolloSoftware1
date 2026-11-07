@@ -14,6 +14,7 @@ export default function ConferenciasPage() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [creando, setCreando] = useState(false);
+  const [conferenciaEditada, setConferenciaEditada] = useState(null);
   const [mensaje, setMensaje] = useState("");
   const esGestor = ["administrador", "comite"].includes(obtenerRolActivo());
 
@@ -40,9 +41,14 @@ export default function ConferenciasPage() {
     handleFiltrar({});
   };
 
-  const handleGuardado = () => {
+  const handleCerrarModal = () => {
     setCreando(false);
-    setMensaje("Conferencia creada correctamente.");
+    setConferenciaEditada(null);
+  };
+
+  const handleGuardado = () => {
+    setMensaje(conferenciaEditada ? "Conferencia actualizada correctamente." : "Conferencia creada correctamente.");
+    handleCerrarModal();
     handleFiltrar({ ...filtros });
   };
 
@@ -77,9 +83,13 @@ export default function ConferenciasPage() {
       {error && <p className="mensaje-error">{error}</p>}
       {cargando && <p>Cargando conferencias...</p>}
       {!cargando && !error && conferencias.length === 0 && <p>No se encontraron conferencias.</p>}
-      {!cargando && !error && conferencias.length > 0 && <ConferenciasTabla conferencias={conferencias} />}
+      {!cargando && !error && conferencias.length > 0 && (
+        <ConferenciasTabla conferencias={conferencias} onEditar={esGestor ? setConferenciaEditada : undefined} />
+      )}
 
-      {creando && <ConferenciaModal onCerrar={() => setCreando(false)} onGuardado={handleGuardado} />}
+      {(creando || conferenciaEditada) && (
+        <ConferenciaModal conferencia={conferenciaEditada} onCerrar={handleCerrarModal} onGuardado={handleGuardado} />
+      )}
     </section>
   );
 }

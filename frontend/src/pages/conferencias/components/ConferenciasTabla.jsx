@@ -1,3 +1,5 @@
+import { Pencil } from "lucide-react";
+
 const formatearFecha = (fecha) =>
   new Date(`${fecha}T00:00:00`).toLocaleDateString("es-CO", {
     day: "2-digit",
@@ -5,7 +7,7 @@ const formatearFecha = (fecha) =>
     year: "numeric",
   });
 
-export default function ConferenciasTabla({ conferencias }) {
+export default function ConferenciasTabla({ conferencias, onEditar }) {
   return (
     <div className="conferencias-tabla">
       <table>
@@ -15,6 +17,7 @@ export default function ConferenciasTabla({ conferencias }) {
             <th>Fecha de inicio</th>
             <th>Fecha de fin</th>
             <th>Estado</th>
+            {onEditar && <th>Acciones</th>}
           </tr>
         </thead>
         <tbody>
@@ -23,9 +26,21 @@ export default function ConferenciasTabla({ conferencias }) {
               <td className="conferencias-nombre">{conferencia.nombre}</td>
               <td className="conferencias-fecha">{formatearFecha(conferencia.fecha_inicio)}</td>
               <td className="conferencias-fecha">{formatearFecha(conferencia.fecha_fin)}</td>
-              <td>
+              <td className="conferencias-estado">
                 <span className="conferencias-etiqueta">{conferencia.activo ? "Activa" : "Inactiva"}</span>
               </td>
+              {onEditar && (
+                <td className="conferencias-acciones">
+                  <button
+                    className="conferencias-accion"
+                    type="button"
+                    aria-label={`Editar ${conferencia.nombre}`}
+                    onClick={() => onEditar(conferencia)}
+                  >
+                    <Pencil size={16} aria-hidden="true" />
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
