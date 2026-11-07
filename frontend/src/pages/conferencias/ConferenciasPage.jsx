@@ -5,6 +5,7 @@ import { getEventos } from "../../api/eventosApi";
 import CampoFormulario from "../../components/CampoFormulario";
 import ConferenciaModal from "./components/ConferenciaModal";
 import ConferenciasTabla from "./components/ConferenciasTabla";
+import FechasLimiteModal from "./components/FechasLimiteModal";
 import "./ConferenciasPage.css";
 
 export default function ConferenciasPage() {
@@ -15,6 +16,7 @@ export default function ConferenciasPage() {
   const [error, setError] = useState("");
   const [creando, setCreando] = useState(false);
   const [conferenciaEditada, setConferenciaEditada] = useState(null);
+  const [conferenciaFechas, setConferenciaFechas] = useState(null);
   const [mensaje, setMensaje] = useState("");
   const esGestor = ["administrador", "comite"].includes(obtenerRolActivo());
 
@@ -44,6 +46,7 @@ export default function ConferenciasPage() {
   const handleCerrarModal = () => {
     setCreando(false);
     setConferenciaEditada(null);
+    setConferenciaFechas(null);
   };
 
   const handleGuardado = () => {
@@ -51,6 +54,12 @@ export default function ConferenciasPage() {
     handleCerrarModal();
     handleFiltrar({ ...filtros });
   };
+
+  const handleFechasGuardadas = () => {
+    setMensaje("Fechas límite guardadas correctamente.");
+    handleCerrarModal();
+  };
+
 
   return (
     <section className="conferencias-pagina">
@@ -84,11 +93,19 @@ export default function ConferenciasPage() {
       {cargando && <p>Cargando conferencias...</p>}
       {!cargando && !error && conferencias.length === 0 && <p>No se encontraron conferencias.</p>}
       {!cargando && !error && conferencias.length > 0 && (
-        <ConferenciasTabla conferencias={conferencias} onEditar={esGestor ? setConferenciaEditada : undefined} />
+        <ConferenciasTabla
+          conferencias={conferencias}
+          onEditar={esGestor ? setConferenciaEditada : undefined}
+          onFechas={setConferenciaFechas}
+        />
       )}
 
       {(creando || conferenciaEditada) && (
         <ConferenciaModal conferencia={conferenciaEditada} onCerrar={handleCerrarModal} onGuardado={handleGuardado} />
+      )}
+
+      {conferenciaFechas && (
+        <FechasLimiteModal conferencia={conferenciaFechas} onCerrar={handleCerrarModal} onGuardado={handleFechasGuardadas} />
       )}
     </section>
   );

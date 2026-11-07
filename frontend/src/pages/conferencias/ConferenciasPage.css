@@ -169,6 +169,29 @@
   background-color: #ece7de;
 }
 
+.conferencias-botones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.conferencias-botones .boton {
+  width: auto;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.conferencia-modal-fechas-limite {
+  width: min(620px, calc(100vw - 24px));
+}
+
+.conferencia-modal-subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-texto-secundario);
+}
+
+
 @media (max-width: 900px) {
   .conferencias-encabezado {
     align-items: stretch;

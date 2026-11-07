@@ -7,7 +7,7 @@ const formatearFecha = (fecha) =>
     year: "numeric",
   });
 
-export default function ConferenciasTabla({ conferencias, onEditar }) {
+export default function ConferenciasTabla({ conferencias, onEditar, onFechas }) {
   return (
     <div className="conferencias-tabla">
       <table>
@@ -31,14 +31,24 @@ export default function ConferenciasTabla({ conferencias, onEditar }) {
               </td>
               {onEditar && (
                 <td className="conferencias-acciones">
-                  <button
-                    className="conferencias-accion"
-                    type="button"
-                    aria-label={`Editar ${conferencia.nombre}`}
-                    onClick={() => onEditar(conferencia)}
-                  >
-                    <Pencil size={16} aria-hidden="true" />
-                  </button>
+                  <div className="conferencias-botones">
+                    <button
+                      className="conferencias-accion"
+                      type="button"
+                      aria-label={`Editar ${conferencia.nombre}`}
+                      onClick={() => onEditar(conferencia)}
+                    >
+                      <Pencil size={16} aria-hidden="true" />
+                    </button>
+                    <button
+                      className="boton boton-secundario"
+                      type="button"
+                      aria-label={`Fechas límite de ${conferencia.nombre}`}
+                      onClick={() => onFechas(conferencia)}
+                    >
+                      Fechas límite
+                    </button>
+                  </div>
                 </td>
               )}
             </tr>

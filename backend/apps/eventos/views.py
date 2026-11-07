@@ -1,10 +1,14 @@
+from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
-from .models import Evento
+from .models import Evento, FechaLimite
 from .permissions import PermisoEventos
-from .serializers import EventoSerializer
+from .serializers import EventoSerializer, FechasLimiteSerializer
+
 
 
 @extend_schema_view(
@@ -38,3 +42,28 @@ class EventoViewSet(viewsets.ModelViewSet):
         if buscar:
             eventos = eventos.filter(nombre__icontains=buscar)
         return eventos
+
+
+    @extend_schema(methods=['GET'], summary='Consultar fechas límite',
+                   description='Disponible para cualquier usuario con sesión. Las etapas sin configurar devuelven null.')
+    @extend_schema(methods=['PATCH'], summary='Configurar fechas límite',
+                   description='Solo con rol activo de administrador o comité. Las etapas deben estar en orden cronológico.')
+    @action(detail=True, methods=['get', 'patch'], url_path='fechas-limite', serializer_class=FechasLimiteSerializer)
+    def fechas_limite(self, request, pk=None):
+        evento = self.get_object()
+
+        if request.method == 'PATCH':
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            with transaction.atomic():
+                for etapa, fecha in serializer.validated_data.items():
+                    FechaLimite.objects.update_or_create(
+                        evento=evento,
+                        etapa=etapa,
+                        defaults={'fecha': fecha, 'creado_por': request.user},
+                    )
+            return Response(serializer.data)
+
+        fechas = {fecha.etapa: fecha.fecha for fecha in evento.fechas_limite.all()}
+        serializer = self.get_serializer({etapa: fechas.get(etapa) for etapa in FechaLimite.Etapa.values})
+        return Response(serializer.data)
