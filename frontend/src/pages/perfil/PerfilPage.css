@@ -1,0 +1,79 @@
+.perfil-pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.perfil-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 760px;
+  padding: 24px;
+  border: 1px solid var(--color-borde);
+  border-radius: 16px;
+  box-shadow: var(--sombra-suave);
+}
+
+.perfil-tarjeta h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.perfil-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.perfil-campos .mensaje-error {
+  margin-top: 4px;
+}
+
+.perfil-campos input:disabled {
+  color: var(--color-texto-secundario);
+  background-color: #ece7de;
+  cursor: not-allowed;
+}
+
+.perfil-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.perfil-etiqueta {
+  padding: 5px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background-color: #efebe3;
+}
+
+.perfil-acciones {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.perfil-acciones .boton {
+  width: auto;
+}
+
+.perfil-acciones .boton:disabled {
+  opacity: 0.55;
+}
+
+@media (max-width: 900px) {
+  .perfil-tarjeta {
+    padding: 16px;
+  }
+
+  .perfil-campos {
+    grid-template-columns: 1fr;
+  }
+
+  .perfil-acciones .boton {
+    width: 100%;
+  }
+}
