@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { obtenerRolActivo } from "../../api/authApi";
 import { getUsuarios } from "../../api/usuariosApi";
+import BorrarUsuarioModal from "./components/BorrarUsuarioModal";
 import UsuarioModal from "./components/UsuarioModal";
 import UsuariosFiltros from "./components/UsuariosFiltros";
 import UsuariosTabla from "./components/UsuariosTabla";
@@ -14,6 +15,7 @@ export default function UsuariosPage() {
   const [error, setError] = useState("");
   const [creando, setCreando] = useState(false);
   const [usuarioEditado, setUsuarioEditado] = useState(null);
+  const [usuarioBorrado, setUsuarioBorrado] = useState(null);
   const [mensaje, setMensaje] = useState("");
   const esGestor = ["administrador", "comite"].includes(obtenerRolActivo());
 
@@ -33,10 +35,17 @@ export default function UsuariosPage() {
   const handleCerrarModal = () => {
     setCreando(false);
     setUsuarioEditado(null);
+    setUsuarioBorrado(null);
   };
 
   const handleGuardado = () => {
     setMensaje(usuarioEditado ? "Usuario actualizado correctamente." : "Usuario creado correctamente.");
+    handleCerrarModal();
+    handleFiltrar({ ...filtros });
+  };
+
+  const handleBorrado = () => {
+    setMensaje("Usuario borrado correctamente.");
     handleCerrarModal();
     handleFiltrar({ ...filtros });
   };
@@ -59,10 +68,20 @@ export default function UsuariosPage() {
       {error && <p className="mensaje-error">{error}</p>}
       {cargando && <p>Cargando usuarios...</p>}
       {!cargando && !error && usuarios.length === 0 && <p>No se encontraron usuarios.</p>}
-      {!cargando && !error && usuarios.length > 0 && <UsuariosTabla usuarios={usuarios} onEditar={esGestor ? setUsuarioEditado : undefined} />}
+      {!cargando && !error && usuarios.length > 0 && (
+        <UsuariosTabla
+          usuarios={usuarios}
+          onEditar={esGestor ? setUsuarioEditado : undefined}
+          onBorrar={setUsuarioBorrado}
+        />
+      )}
 
       {(creando || usuarioEditado) && (
         <UsuarioModal usuario={usuarioEditado} onCerrar={handleCerrarModal} onGuardado={handleGuardado} />
+      )}
+
+      {usuarioBorrado && (
+        <BorrarUsuarioModal usuario={usuarioBorrado} onCerrar={handleCerrarModal} onBorrado={handleBorrado} />
       )}
     </section>
   );

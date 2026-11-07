@@ -1,4 +1,4 @@
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 const obtenerRoles = (usuario) => {
   const roles = [];
@@ -8,7 +8,7 @@ const obtenerRoles = (usuario) => {
   return roles;
 };
 
-export default function UsuariosTabla({ usuarios, onEditar }) {
+export default function UsuariosTabla({ usuarios, onEditar, onBorrar }) {
   return (
     <div className="usuarios-tabla">
       <table>
@@ -38,14 +38,24 @@ export default function UsuariosTabla({ usuarios, onEditar }) {
               <td className="usuarios-estado">{usuario.activo ? "Activo" : "Inactivo"}</td>
               {onEditar && (
                 <td className="usuarios-acciones">
-                  <button
-                    className="usuarios-accion"
-                    type="button"
-                    aria-label={`Editar a ${usuario.nombres} ${usuario.apellidos}`}
-                    onClick={() => onEditar(usuario)}
-                  >
-                    <Pencil size={16} aria-hidden="true" />
-                  </button>
+                  <div className="usuarios-botones">
+                    <button
+                      className="usuarios-accion"
+                      type="button"
+                      aria-label={`Editar a ${usuario.nombres} ${usuario.apellidos}`}
+                      onClick={() => onEditar(usuario)}
+                    >
+                      <Pencil size={16} aria-hidden="true" />
+                    </button>
+                    <button
+                      className="usuarios-accion"
+                      type="button"
+                      aria-label={`Borrar a ${usuario.nombres} ${usuario.apellidos}`}
+                      onClick={() => onBorrar(usuario)}
+                    >
+                      <Trash2 size={16} aria-hidden="true" />
+                    </button>
+                  </div>
                 </td>
               )}
             </tr>
