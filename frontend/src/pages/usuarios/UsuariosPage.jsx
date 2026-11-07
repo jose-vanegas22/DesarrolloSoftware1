@@ -13,6 +13,7 @@ export default function UsuariosPage() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [creando, setCreando] = useState(false);
+  const [usuarioEditado, setUsuarioEditado] = useState(null);
   const [mensaje, setMensaje] = useState("");
   const esGestor = ["administrador", "comite"].includes(obtenerRolActivo());
 
@@ -29,9 +30,14 @@ export default function UsuariosPage() {
     setFiltros(nuevosFiltros);
   };
 
-  const handleGuardado = () => {
+  const handleCerrarModal = () => {
     setCreando(false);
-    setMensaje("Usuario creado correctamente.");
+    setUsuarioEditado(null);
+  };
+
+  const handleGuardado = () => {
+    setMensaje(usuarioEditado ? "Usuario actualizado correctamente." : "Usuario creado correctamente.");
+    handleCerrarModal();
     handleFiltrar({ ...filtros });
   };
 
@@ -53,9 +59,11 @@ export default function UsuariosPage() {
       {error && <p className="mensaje-error">{error}</p>}
       {cargando && <p>Cargando usuarios...</p>}
       {!cargando && !error && usuarios.length === 0 && <p>No se encontraron usuarios.</p>}
-      {!cargando && !error && usuarios.length > 0 && <UsuariosTabla usuarios={usuarios} />}
+      {!cargando && !error && usuarios.length > 0 && <UsuariosTabla usuarios={usuarios} onEditar={esGestor ? setUsuarioEditado : undefined} />}
 
-      {creando && <UsuarioModal onCerrar={() => setCreando(false)} onGuardado={handleGuardado} />}
+      {(creando || usuarioEditado) && (
+        <UsuarioModal usuario={usuarioEditado} onCerrar={handleCerrarModal} onGuardado={handleGuardado} />
+      )}
     </section>
   );
 }

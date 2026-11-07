@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { createUsuario } from "../../../api/usuariosApi";
+import { createUsuario, updateUsuario } from "../../../api/usuariosApi";
 import CampoFormulario from "../../../components/CampoFormulario";
 
 const FORMULARIO_INICIAL = {
@@ -13,6 +13,7 @@ const FORMULARIO_INICIAL = {
   es_administrador: false,
   es_comite: false,
   es_autor: false,
+  activo: true,
 };
 
 const ROLES = [
@@ -21,8 +22,26 @@ const ROLES = [
   { campo: "es_autor", texto: "Autor" },
 ];
 
-export default function UsuarioModal({ onCerrar, onGuardado }) {
-  const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
+const obtenerFormulario = (usuario) => {
+  if (!usuario) return FORMULARIO_INICIAL;
+
+  return {
+    ...FORMULARIO_INICIAL,
+    nombres: usuario.nombres,
+    apellidos: usuario.apellidos,
+    correo: usuario.correo,
+    telefono: usuario.telefono,
+    es_administrador: usuario.es_administrador,
+    es_comite: usuario.es_comite,
+    es_autor: usuario.es_autor,
+    activo: usuario.activo,
+  };
+};
+
+
+export default function UsuarioModal({ usuario, onCerrar, onGuardado }) {
+  const editando = Boolean(usuario);
+  const [formulario, setFormulario] = useState(() => obtenerFormulario(usuario));
   const [errores, setErrores] = useState({});
   const [enviando, setEnviando] = useState(false);
   const modalRef = useRef(null);
@@ -50,13 +69,21 @@ export default function UsuarioModal({ onCerrar, onGuardado }) {
     try {
       const datos = { ...formulario };
       delete datos.confirmacion;
-      await createUsuario(datos);
+
+      if (editando) {
+        if (!datos.password) delete datos.password;
+        await updateUsuario(usuario.id, datos);
+      } else {
+        await createUsuario(datos);
+      }
+
       onGuardado();
+
     } catch (err) {
       const datos = err.response?.data;
       setErrores(typeof datos === "object" && datos !== null
         ? datos
-        : { general: ["No se pudo crear el usuario. Intenta de nuevo."] });
+        : { general: ["No se pudo guardar el usuario. Intenta de nuevo."] });
       setEnviando(false);
     }
   };
@@ -67,7 +94,7 @@ export default function UsuarioModal({ onCerrar, onGuardado }) {
     <dialog className="usuario-modal" ref={modalRef} onCancel={onCerrar}>
       <form onSubmit={handleSubmit}>
         <div className="usuario-modal-encabezado">
-          <h2>Crear usuario</h2>
+          <h2>{editando ? "Editar usuario" : "Crear usuario"}</h2>
           <button className="usuario-modal-cerrar" type="button" aria-label="Cerrar" onClick={onCerrar}>
             <X size={18} aria-hidden="true" />
           </button>
@@ -91,11 +118,11 @@ export default function UsuarioModal({ onCerrar, onGuardado }) {
             {mostrarError("telefono")}
           </div>
           <div>
-            <CampoFormulario id="usuario-password" name="password" etiqueta="Contraseña" type="password" autoComplete="new-password" value={formulario.password} onChange={handleChange} required />
+            <CampoFormulario id="usuario-password" name="password" etiqueta={editando ? "Nueva contraseña (opcional)" : "Contraseña"} type="password" autoComplete="new-password" value={formulario.password} onChange={handleChange} required={!editando} />
             {mostrarError("password")}
           </div>
           <div>
-            <CampoFormulario id="usuario-confirmacion" name="confirmacion" etiqueta="Confirmar contraseña" type="password" autoComplete="new-password" value={formulario.confirmacion} onChange={handleChange} required />
+            <CampoFormulario id="usuario-confirmacion" name="confirmacion" etiqueta="Confirmar contraseña" type="password" autoComplete="new-password" value={formulario.confirmacion} onChange={handleChange} required={!editando} />
             {mostrarError("confirmacion")}
           </div>
         </div>
@@ -109,6 +136,16 @@ export default function UsuarioModal({ onCerrar, onGuardado }) {
             </label>
           ))}
         </fieldset>
+
+        {editando && (
+          <fieldset className="usuario-modal-roles">
+            <legend>Estado</legend>
+            <label>
+              <input type="checkbox" name="activo" checked={formulario.activo} onChange={handleChange} />
+              Usuario activo
+            </label>
+          </fieldset>
+        )}
 
         {mostrarError("non_field_errors")}
         {mostrarError("general")}

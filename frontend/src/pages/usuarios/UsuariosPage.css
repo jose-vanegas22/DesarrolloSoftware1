@@ -209,6 +209,21 @@
   width: auto;
 }
 
+.usuarios-accion {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  color: var(--color-principal);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.usuarios-accion:hover {
+  background-color: #ece7de;
+}
 
 @media (max-width: 900px) {
   .usuarios-filtros {
@@ -263,6 +278,10 @@
 
   .usuarios-tabla .usuarios-estado {
     margin-top: 8px;
+  }
+
+  .usuarios-tabla .usuarios-acciones {
+    margin-top: 10px;
   }
 
     .usuario-modal {
