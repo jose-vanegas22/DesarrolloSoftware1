@@ -8,6 +8,7 @@ import { Menu, X } from "lucide-react";
 const OPCIONES = [
   { ruta: "/inicio", texto: "Inicio", roles: ["administrador", "comite", "autor"] },
   { ruta: "/usuarios", texto: "Usuarios", roles: ["administrador", "comite"] },
+  { ruta: "/conferencias", texto: "Conferencias", roles: ["administrador", "comite", "autor"] },
   { ruta: "/perfil", texto: "Mi perfil", roles: ["administrador", "comite", "autor"] },
 ];
 

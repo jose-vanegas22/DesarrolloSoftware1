@@ -6,6 +6,7 @@ import InicioPage from "./pages/inicio/InicioPage";
 import PerfilPage from "./pages/perfil/PerfilPage";
 import SeleccionarRolPage from "./pages/seleccionar-rol/SeleccionarRolPage";
 import UsuariosPage from "./pages/usuarios/UsuariosPage";
+import ConferenciasPage from "./pages/conferencias/ConferenciasPage";
 
 export default function App() {
   return (
@@ -40,7 +41,7 @@ export default function App() {
               </RutaProtegida>
             }
           />
-
+          <Route path="/conferencias" element={<ConferenciasPage />} />
           <Route path="/perfil" element={<PerfilPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/inicio" replace />} />

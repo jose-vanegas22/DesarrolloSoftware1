@@ -8,6 +8,7 @@ urlpatterns = [
     path('api/token/', LoginView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/', include('apps.usuarios.urls')),  # Incluye las rutas de la app usuarios
+    path('api/', include('apps.eventos.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'), # Genera la descripcion de la API en formaro OpenApi
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'), # Es la pagina swagger que se abre en el navegador
 ]
