@@ -1,12 +1,17 @@
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { createEvento } from "../../../api/eventosApi";
+import { createEvento, updateEvento } from "../../../api/eventosApi";
 import CampoFormulario from "../../../components/CampoFormulario";
 
 const FORMULARIO_INICIAL = { nombre: "", fecha_inicio: "", fecha_fin: "" };
 
-export default function ConferenciaModal({ onCerrar, onGuardado }) {
-  const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
+export default function ConferenciaModal({ conferencia, onCerrar, onGuardado }) {
+  const editando = Boolean(conferencia);
+  const [formulario, setFormulario] = useState(() => (
+    editando
+      ? { nombre: conferencia.nombre, fecha_inicio: conferencia.fecha_inicio, fecha_fin: conferencia.fecha_fin }
+      : FORMULARIO_INICIAL
+  ));
   const [errores, setErrores] = useState({});
   const [enviando, setEnviando] = useState(false);
   const modalRef = useRef(null);
@@ -25,7 +30,12 @@ export default function ConferenciaModal({ onCerrar, onGuardado }) {
     setEnviando(true);
 
     try {
-      await createEvento(formulario);
+      if (editando) {
+        await updateEvento(conferencia.id, formulario);
+      } else {
+        await createEvento(formulario);
+      }
+
       onGuardado();
     } catch (err) {
       const datos = err.response?.data;
@@ -42,7 +52,7 @@ export default function ConferenciaModal({ onCerrar, onGuardado }) {
     <dialog className="conferencia-modal" ref={modalRef} onCancel={onCerrar}>
       <form onSubmit={handleSubmit}>
         <div className="conferencia-modal-encabezado">
-          <h2>Crear conferencia</h2>
+          <h2>{editando ? "Editar conferencia" : "Crear conferencia"}</h2>
           <button className="conferencia-modal-cerrar" type="button" aria-label="Cerrar" onClick={onCerrar}>
             <X size={18} aria-hidden="true" />
           </button>

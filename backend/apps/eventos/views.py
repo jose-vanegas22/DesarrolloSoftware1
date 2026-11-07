@@ -21,12 +21,16 @@ from .serializers import EventoSerializer
         summary='Consultar una conferencia',
         description='Disponible para cualquier usuario con sesión.',
     ),
+    partial_update=extend_schema(
+        summary='Editar conferencia',
+        description='Solo con rol activo de administrador o comité.',
+    ),
 )
 class EventoViewSet(viewsets.ModelViewSet):
     queryset = Evento.objects.all()
     serializer_class = EventoSerializer
     permission_classes = [IsAuthenticated, PermisoEventos]
-    http_method_names = ['get', 'post', 'head', 'options']
+    http_method_names = ['get', 'post', 'patch', 'head', 'options']
 
     def get_queryset(self):
         eventos = Evento.objects.all()
