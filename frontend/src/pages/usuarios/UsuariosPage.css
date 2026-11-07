@@ -106,6 +106,110 @@
   font-weight: 700;
 }
 
+.usuarios-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.usuarios-encabezado .boton {
+  gap: 6px;
+  width: auto;
+}
+
+.usuario-modal {
+  width: min(720px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  padding: 24px;
+  border: none;
+  border-radius: 18px;
+  color: var(--color-texto);
+  background-color: var(--color-fondo);
+  box-shadow: var(--sombra-elevada);
+}
+
+.usuario-modal::backdrop {
+  background-color: rgba(31, 27, 36, 0.5);
+}
+
+.usuario-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.usuario-modal-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.usuario-modal h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.usuario-modal-cerrar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  color: var(--color-texto);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.usuario-modal-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.usuario-modal-campos .mensaje-error {
+  margin-top: 4px;
+}
+
+.usuario-modal-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+  padding: 12px 0 0;
+  border: none;
+  border-top: 1px solid var(--color-borde);
+}
+
+.usuario-modal-roles legend {
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-texto-secundario);
+}
+
+.usuario-modal-roles label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  font-size: 0.9rem;
+}
+
+.usuario-modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.usuario-modal-acciones .boton {
+  width: auto;
+}
+
+
 @media (max-width: 900px) {
   .usuarios-filtros {
     grid-template-columns: 1fr 1fr;
@@ -160,4 +264,25 @@
   .usuarios-tabla .usuarios-estado {
     margin-top: 8px;
   }
+
+    .usuario-modal {
+    padding: 16px;
+  }
+
+  .usuario-modal-campos {
+    grid-template-columns: 1fr;
+  }
+
+  .usuario-modal-roles {
+    flex-direction: column;
+  }
+
+  .usuario-modal-acciones {
+    flex-direction: column-reverse;
+  }
+
+  .usuario-modal-acciones .boton {
+    width: 100%;
+  }
+
 }
