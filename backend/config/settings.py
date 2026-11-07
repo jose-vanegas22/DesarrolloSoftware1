@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'apps.usuarios',
     'apps.eventos',
+    'apps.articulos',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'

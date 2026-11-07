@@ -1,4 +1,6 @@
 import { Pencil } from "lucide-react";
+import { Link } from "react-router";
+
 
 const formatearFecha = (fecha) =>
   new Date(`${fecha}T00:00:00`).toLocaleDateString("es-CO", {
@@ -7,7 +9,7 @@ const formatearFecha = (fecha) =>
     year: "numeric",
   });
 
-export default function ConferenciasTabla({ conferencias, onEditar, onFechas }) {
+export default function ConferenciasTabla({ conferencias, onEditar, onFechas, esAutor }) {
   return (
     <div className="conferencias-tabla">
       <table>
@@ -17,7 +19,7 @@ export default function ConferenciasTabla({ conferencias, onEditar, onFechas }) 
             <th>Fecha de inicio</th>
             <th>Fecha de fin</th>
             <th>Estado</th>
-            {onEditar && <th>Acciones</th>}
+            {(onEditar || esAutor) && <th>Acciones</th>}
           </tr>
         </thead>
         <tbody>
@@ -29,6 +31,21 @@ export default function ConferenciasTabla({ conferencias, onEditar, onFechas }) 
               <td className="conferencias-estado">
                 <span className="conferencias-etiqueta">{conferencia.activo ? "Activa" : "Inactiva"}</span>
               </td>
+              {esAutor && (
+                <td className="conferencias-acciones">
+                  {conferencia.postulacion_abierta && (
+                    <div className="conferencias-botones">
+                      <Link
+                        className="boton boton-secundario"
+                        aria-label={`Postular artículo a ${conferencia.nombre}`}
+                        to={`/articulos/postular?evento=${conferencia.id}`}
+                      >
+                        Postular artículo
+                      </Link>
+                    </div>
+                  )}
+                </td>
+              )}
               {onEditar && (
                 <td className="conferencias-acciones">
                   <div className="conferencias-botones">
