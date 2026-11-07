@@ -15,3 +15,23 @@ class EventoSerializer(serializers.ModelSerializer):
         if fecha_fin < fecha_inicio:
             raise serializers.ValidationError({'fecha_fin': 'La fecha de fin no puede ser anterior a la de inicio.'})
         return attrs
+
+
+
+class FechasLimiteSerializer(serializers.Serializer):
+    postulacion = serializers.DateTimeField()
+    revision = serializers.DateTimeField()
+    version_corregida = serializers.DateTimeField()
+    version_final = serializers.DateTimeField()
+
+    def validate(self, attrs):
+        etapas = [
+            ('postulacion', 'Postulación'),
+            ('revision', 'Revisión'),
+            ('version_corregida', 'Versión corregida'),
+            ('version_final', 'Versión final'),
+        ]
+        for (anterior, texto_anterior), (siguiente, _) in zip(etapas, etapas[1:]):
+            if attrs[siguiente] <= attrs[anterior]:
+                raise serializers.ValidationError({siguiente: f'Debe ser posterior a {texto_anterior}.'})
+        return attrs
