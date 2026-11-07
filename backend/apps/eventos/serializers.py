@@ -6,7 +6,7 @@ from .models import Evento
 class EventoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evento
-        fields = ['id', 'nombre', 'fecha_inicio', 'fecha_fin', 'agenda_publicada', 'activo', 'creado', 'actualizado']
+        fields = ['id', 'nombre', 'fecha_inicio', 'fecha_fin', 'agenda_publicada', 'activo', 'postulacion_abierta', 'creado', 'actualizado']
         read_only_fields = ['agenda_publicada', 'activo', 'creado', 'actualizado']
 
     def validate(self, attrs):

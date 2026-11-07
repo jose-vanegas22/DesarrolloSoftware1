@@ -1,0 +1,121 @@
+.articulo-pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.articulo-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.articulo-volver {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  color: var(--color-principal);
+  background-color: var(--color-fondo);
+}
+
+.articulo-volver:hover {
+  background-color: #ece7de;
+}
+
+.articulo-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 860px;
+  padding: 24px;
+  border: 1px solid var(--color-borde);
+  border-radius: 16px;
+  box-shadow: var(--sombra-suave);
+}
+
+.articulo-tarjeta h2 {
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-borde);
+  font-size: 1rem;
+}
+
+.articulo-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.articulo-autor {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.articulo-tarjeta select,
+.articulo-tarjeta textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--color-texto);
+  background-color: var(--color-fondo);
+  box-shadow: var(--sombra-hundida);
+}
+
+.articulo-tarjeta textarea {
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.articulo-tarjeta select:focus,
+.articulo-tarjeta textarea:focus {
+  outline: 2px solid var(--color-principal);
+  outline-offset: 1px;
+}
+
+.articulo-tarjeta input:disabled {
+  color: var(--color-texto-secundario);
+  background-color: #ece7de;
+  cursor: not-allowed;
+}
+
+.articulo-tarjeta .mensaje-error {
+  margin-top: 4px;
+}
+
+.articulo-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.articulo-acciones .boton {
+  width: auto;
+}
+
+@media (max-width: 900px) {
+  .articulo-tarjeta {
+    padding: 16px;
+  }
+
+  .articulo-campos,
+  .articulo-autor {
+    grid-template-columns: 1fr;
+  }
+
+  .articulo-acciones {
+    flex-direction: column-reverse;
+  }
+
+  .articulo-acciones .boton {
+    width: 100%;
+  }
+}

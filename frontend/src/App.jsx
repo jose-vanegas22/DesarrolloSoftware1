@@ -7,6 +7,7 @@ import PerfilPage from "./pages/perfil/PerfilPage";
 import SeleccionarRolPage from "./pages/seleccionar-rol/SeleccionarRolPage";
 import UsuariosPage from "./pages/usuarios/UsuariosPage";
 import ConferenciasPage from "./pages/conferencias/ConferenciasPage";
+import PostularArticuloPage from "./pages/articulos/PostularArticuloPage";
 
 export default function App() {
   return (
@@ -42,6 +43,14 @@ export default function App() {
             }
           />
           <Route path="/conferencias" element={<ConferenciasPage />} />
+          <Route
+            path="/articulos/postular"
+            element={
+              <RutaProtegida roles={["autor"]}>
+                <PostularArticuloPage />
+              </RutaProtegida>
+            }
+          />
           <Route path="/perfil" element={<PerfilPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/inicio" replace />} />

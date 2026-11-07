@@ -7,6 +7,7 @@ import ConferenciaModal from "./components/ConferenciaModal";
 import ConferenciasTabla from "./components/ConferenciasTabla";
 import FechasLimiteModal from "./components/FechasLimiteModal";
 import "./ConferenciasPage.css";
+import { useLocation } from "react-router";
 
 export default function ConferenciasPage() {
   const [conferencias, setConferencias] = useState([]);
@@ -17,8 +18,10 @@ export default function ConferenciasPage() {
   const [creando, setCreando] = useState(false);
   const [conferenciaEditada, setConferenciaEditada] = useState(null);
   const [conferenciaFechas, setConferenciaFechas] = useState(null);
-  const [mensaje, setMensaje] = useState("");
+  const { state } = useLocation(); // Nos permite recibir un mensaje desde otra pagina, por ejemplo cuando se postula un articulo y se redirige a esta pagina
+  const [mensaje, setMensaje] = useState(state?.mensaje ?? ""); // Si hay un mensaje en el estado de la ubicacion, lo usamos, sino dejamos vacio
   const esGestor = ["administrador", "comite"].includes(obtenerRolActivo());
+  const esAutor = obtenerRolActivo() === "autor";
 
   useEffect(() => {
     getEventos(filtros)
@@ -97,6 +100,7 @@ export default function ConferenciasPage() {
           conferencias={conferencias}
           onEditar={esGestor ? setConferenciaEditada : undefined}
           onFechas={setConferenciaFechas}
+          esAutor={esAutor}
         />
       )}
 
