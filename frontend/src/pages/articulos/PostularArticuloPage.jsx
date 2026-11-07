@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { createArticulo } from "../../api/articulosApi";
@@ -28,6 +28,7 @@ export default function PostularArticuloPage() {
     linea_tematica: "",
     afiliacion: "",
   });
+  const [coautores, setCoautores] = useState([]);
   const [errores, setErrores] = useState({});
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -52,13 +53,28 @@ export default function PostularArticuloPage() {
     setFormulario({ ...formulario, [e.target.name]: e.target.value });
   };
 
+  const handleAgregarCoautor = () => {
+    setCoautores([...coautores, { nombre: "", afiliacion: "", correo: "" }]);
+  };
+
+  const handleQuitarCoautor = (indice) => {
+    setCoautores(coautores.filter((_, posicion) => posicion !== indice));
+    setErrores({});
+  };
+
+  const handleChangeCoautor = (indice, e) => {
+    setCoautores(coautores.map((coautor, posicion) => (
+      posicion === indice ? { ...coautor, [e.target.name]: e.target.value } : coautor
+    )));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrores({});
     setEnviando(true);
 
     try {
-      await createArticulo(formulario);
+      await createArticulo({ ...formulario, coautores });
       navigate("/conferencias", { state: { mensaje: "Artículo postulado correctamente." } }); // Redirige a la pagina de conferencias y le pasa un mensaje cuando el articulo se creo con exito
     } catch (err) {
       const datos = err.response?.data;
@@ -70,6 +86,11 @@ export default function PostularArticuloPage() {
   };
 
   const mostrarError = (campo) => errores[campo] && <p className="mensaje-error">{[errores[campo]].flat()[0]}</p>;
+
+  const errorCoautor = (indice, campo) => {
+    const mensaje = errores.coautores?.[indice]?.[campo]?.[0];
+    return mensaje && <p className="mensaje-error">{mensaje}</p>;
+  };
 
   if (!autor) {
     return (
@@ -147,6 +168,36 @@ export default function PostularArticuloPage() {
           </div>
           <CampoFormulario id="articulo-correo" etiqueta="Correo electrónico" type="email" value={autor.correo} disabled />
         </div>
+
+        
+        <h2>Coautores</h2>
+
+        {coautores.map((coautor, indice) => (
+          <div className="articulo-coautor" key={indice}>
+            <div>
+              <CampoFormulario id={`coautor-nombre-${indice}`} name="nombre" etiqueta="Nombre" maxLength={200} value={coautor.nombre} onChange={(e) => handleChangeCoautor(indice, e)} required />
+              {errorCoautor(indice, "nombre")}
+            </div>
+            <div>
+              <CampoFormulario id={`coautor-afiliacion-${indice}`} name="afiliacion" etiqueta="Afiliación universitaria" maxLength={200} value={coautor.afiliacion} onChange={(e) => handleChangeCoautor(indice, e)} required />
+              {errorCoautor(indice, "afiliacion")}
+            </div>
+            <div>
+              <CampoFormulario id={`coautor-correo-${indice}`} name="correo" etiqueta="Correo electrónico" type="email" value={coautor.correo} onChange={(e) => handleChangeCoautor(indice, e)} required />
+              {errorCoautor(indice, "correo")}
+            </div>
+            <button className="articulo-quitar" type="button" aria-label={`Quitar coautor ${indice + 1}`} title="Quitar coautor" onClick={() => handleQuitarCoautor(indice)}>
+              <X size={18} aria-hidden="true" />
+            </button>
+          </div>
+        ))}
+
+        {typeof errores.coautores?.[0] === "string" && <p className="mensaje-error">{errores.coautores[0]}</p>}
+
+        <button className="boton boton-secundario articulo-agregar" type="button" onClick={handleAgregarCoautor}>
+          <Plus size={16} aria-hidden="true" />
+          Agregar coautor
+        </button>
 
         {mostrarError("non_field_errors")}
         {mostrarError("detail")}
