@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'apps.usuarios',
+    'apps.eventos',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'

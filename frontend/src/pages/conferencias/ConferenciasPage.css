@@ -1,0 +1,231 @@
+.conferencias-pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.conferencias-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.conferencias-encabezado .boton {
+  gap: 6px;
+  width: auto;
+}
+
+.conferencias-filtros {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: end;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: 14px;
+  box-shadow: var(--sombra-suave);
+}
+
+.conferencias-filtros .boton {
+  gap: 6px;
+  width: auto;
+  min-height: 44px;
+}
+
+.conferencias-tabla {
+  border: 1px solid var(--color-borde);
+  border-radius: 14px;
+  box-shadow: var(--sombra-suave);
+}
+
+.conferencias-tabla table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.conferencias-tabla th,
+.conferencias-tabla td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--color-borde);
+  text-align: left;
+}
+
+.conferencias-tabla th {
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-texto-secundario);
+  background-color: #efebe3;
+}
+
+.conferencias-tabla th:first-child {
+  border-top-left-radius: 14px;
+}
+
+.conferencias-tabla th:last-child {
+  border-top-right-radius: 14px;
+}
+
+.conferencias-tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.conferencias-nombre {
+  font-weight: 700;
+}
+
+.conferencias-fecha {
+  color: var(--color-texto-secundario);
+}
+
+.conferencias-etiqueta {
+  padding: 4px 9px;
+  border: 1px solid var(--color-borde);
+  border-radius: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background-color: #efebe3;
+}
+
+.conferencia-modal {
+  width: min(560px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  padding: 24px;
+  border: none;
+  border-radius: 18px;
+  color: var(--color-texto);
+  background-color: var(--color-fondo);
+  box-shadow: var(--sombra-elevada);
+}
+
+.conferencia-modal::backdrop {
+  background-color: rgba(31, 27, 36, 0.5);
+}
+
+.conferencia-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.conferencia-modal-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.conferencia-modal h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.conferencia-modal-cerrar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  color: var(--color-texto);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.conferencia-modal-fechas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.conferencia-modal .mensaje-error {
+  margin-top: 4px;
+}
+
+.conferencia-modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.conferencia-modal-acciones .boton {
+  width: auto;
+}
+
+@media (max-width: 900px) {
+  .conferencias-encabezado {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .conferencias-encabezado .boton {
+    width: 100%;
+  }
+
+  .conferencias-filtros {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .conferencias-filtros .campo {
+    grid-column: 1 / -1;
+  }
+
+  .conferencias-filtros .boton {
+    width: 100%;
+  }
+
+  .conferencias-tabla {
+    border: none;
+    box-shadow: none;
+  }
+
+  .conferencias-tabla thead {
+    display: none;
+  }
+
+  .conferencias-tabla table,
+  .conferencias-tabla tbody {
+    display: block;
+  }
+
+  .conferencias-tabla tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .conferencias-tabla tr {
+    display: block;
+    padding: 14px;
+    border: 1px solid var(--color-borde);
+    border-radius: 14px;
+    box-shadow: var(--sombra-suave);
+  }
+
+  .conferencias-tabla td {
+    display: block;
+    padding: 0;
+    border: none;
+  }
+
+  .conferencias-tabla td:last-child {
+    margin-top: 10px;
+  }
+
+  .conferencia-modal {
+    padding: 16px;
+  }
+
+  .conferencia-modal-fechas {
+    grid-template-columns: 1fr;
+  }
+
+  .conferencia-modal-acciones {
+    flex-direction: column-reverse;
+  }
+
+  .conferencia-modal-acciones .boton {
+    width: 100%;
+  }
+}
