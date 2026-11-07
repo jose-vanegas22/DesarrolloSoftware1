@@ -1,3 +1,5 @@
+import { Pencil } from "lucide-react";
+
 const obtenerRoles = (usuario) => {
   const roles = [];
   if (usuario.es_administrador) roles.push("Administrador");
@@ -6,7 +8,7 @@ const obtenerRoles = (usuario) => {
   return roles;
 };
 
-export default function UsuariosTabla({ usuarios }) {
+export default function UsuariosTabla({ usuarios, onEditar }) {
   return (
     <div className="usuarios-tabla">
       <table>
@@ -17,6 +19,7 @@ export default function UsuariosTabla({ usuarios }) {
             <th>Teléfono</th>
             <th>Roles</th>
             <th>Estado</th>
+            {onEditar && <th>Acciones</th>}
           </tr>
         </thead>
         <tbody>
@@ -33,6 +36,18 @@ export default function UsuariosTabla({ usuarios }) {
                 </div>
               </td>
               <td className="usuarios-estado">{usuario.activo ? "Activo" : "Inactivo"}</td>
+              {onEditar && (
+                <td className="usuarios-acciones">
+                  <button
+                    className="usuarios-accion"
+                    type="button"
+                    aria-label={`Editar a ${usuario.nombres} ${usuario.apellidos}`}
+                    onClick={() => onEditar(usuario)}
+                  >
+                    <Pencil size={16} aria-hidden="true" />
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
