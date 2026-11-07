@@ -225,6 +225,30 @@
   background-color: #ece7de;
 }
 
+.usuarios-botones {
+  display: flex;
+  gap: 8px;
+}
+
+.usuario-modal-borrar {
+  width: min(440px, calc(100vw - 24px));
+}
+
+.usuario-modal-borrar p {
+  margin: 12px 0;
+}
+
+.boton-peligro {
+  border-color: var(--color-error);
+  color: #ffffff;
+  background-color: var(--color-error);
+}
+
+.boton-peligro:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 @media (max-width: 900px) {
   .usuarios-filtros {
     grid-template-columns: 1fr 1fr;
