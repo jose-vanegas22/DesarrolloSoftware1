@@ -6,11 +6,15 @@
 .menu-lateral {
   position: sticky;
   top: 0;
+  display: flex;
   flex: 0 0 240px;
+  flex-direction: column;
   height: 100vh;
   padding: 20px 16px;
   background-color: #efebe3;
 }
+
+
 
 .menu-encabezado {
   display: flex;
@@ -50,8 +54,9 @@
 
 .menu-contenido {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  height: calc(100% - 44px);
+  min-height: 0;
   margin-top: 14px;
 }
 
@@ -71,6 +76,7 @@
 .menu-opciones a {
   display: flex;
   align-items: center;
+  gap: 10px;
   min-height: 44px;
   padding: 0 12px;
   border-radius: 10px;
@@ -95,6 +101,53 @@
   padding: 32px;
 }
 
+.menu-colapsar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-top: 10px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  color: var(--color-principal);
+  background-color: var(--color-fondo);
+  cursor: pointer;
+}
+
+.menu-colapsar:hover {
+  background-color: #e7e1d7;
+}
+
+.menu-cerrar-sesion {
+  gap: 8px;
+}
+
+@media (min-width: 901px) {
+  .menu-colapsado {
+    flex-basis: 72px;
+  }
+
+  .menu-colapsado .menu-texto,
+  .menu-colapsado .menu-rol {
+    display: none;
+  }
+
+  .menu-colapsado .menu-encabezado {
+    justify-content: center;
+  }
+
+  .menu-colapsado .menu-opciones a {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .menu-colapsado .menu-cerrar-sesion {
+    padding: 0;
+  }
+}
+
 @media (max-width: 900px) {
   .menu-pagina {
     display: block;
@@ -112,7 +165,6 @@
 
   .menu-contenido {
     display: none;
-    height: auto;
   }
 
   .menu-contenido-abierto {
@@ -126,4 +178,9 @@
   .menu-principal {
     padding: 24px 16px;
   }
+
+  .menu-colapsar {
+    display: none;
+  }
+
 }
