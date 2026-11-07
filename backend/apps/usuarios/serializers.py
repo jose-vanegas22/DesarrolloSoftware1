@@ -35,6 +35,15 @@ class UsuarioSerializer(serializers.ModelSerializer): # Serializer para el model
         ] # Es una lista de booleanos [False, False, True], simplemente es un autor y ya
         if not any(roles):
             raise serializers.ValidationError('El usuario debe tener al menos un rol.')
+        if attrs.get('es_administrador'):
+            otros_administradores = Usuario.objects.filter(es_administrador=True)
+            if self.instance:
+                otros_administradores = otros_administradores.exclude(pk=self.instance.pk)
+            if otros_administradores.exists():
+                raise serializers.ValidationError('Ya existe un administrador del sistema.')
+        if self.instance and self.instance.es_administrador:
+            if attrs.get('es_administrador') is False or attrs.get('activo') is False:
+                raise serializers.ValidationError('El administrador del sistema debe conservar su rol y seguir activo.')
         if self.instance is None and not attrs.get('password'): # Si se está creando un nuevo usuario (self.instance es None) y no se proporciona una contraseña en los datos de entrada (attrs.get('password') es None), se lanza una excepción de validación indicando que la contraseña es obligatoria.
             raise serializers.ValidationError({'password': 'La contraseña es obligatoria.'})
         return attrs
