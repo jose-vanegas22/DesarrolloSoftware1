@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router";
 import { cerrarSesion, obtenerRolActivo } from "../api/authApi";
 import "./MenuPrincipal.css";
+import { Menu, X } from "lucide-react";
 
 // Indica que opciones puede ver cada rol, y el texto que se muestra en el menu
 const OPCIONES = [
@@ -42,7 +43,7 @@ export default function MenuPrincipal() {
             aria-expanded={abierto}
             onClick={() => setAbierto(!abierto)}
           >
-            
+            {abierto ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
           </button>
         </div>
 
