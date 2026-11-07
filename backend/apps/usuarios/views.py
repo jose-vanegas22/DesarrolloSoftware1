@@ -1,6 +1,7 @@
 from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from .models import Usuario
@@ -68,6 +69,12 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         if self.action in ('update', 'partial_update') and not es_gestor(self.request):
             return DatosPersonalesSerializer
         return UsuarioSerializer
+
+    # Para que no se puede borrar el unico administrador del sistema
+    def perform_destroy(self, instance):
+        if instance.es_administrador:
+            raise ValidationError({'detail': 'No se puede borrar al administrador del sistema.'})
+        instance.delete()
 
     def get_queryset(self): # Filtra los usuarios segun los parametros de la peticion, si es gestor puede ver todos los usuarios, si es autor solo puede ver su propio perfil
         usuarios = Usuario.objects.all() # Si es autor solo puede ver su propio perfil

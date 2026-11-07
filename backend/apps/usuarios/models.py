@@ -18,6 +18,8 @@ class UsuarioManager(BaseUserManager):
         return self._crear_usuario(correo, password, **extra_fields)
 
     def create_superuser(self, correo, password=None, **extra_fields):
+        if self.filter(es_administrador=True).exists():
+            raise ValueError('Ya existe un administrador del sistema.')
         extra_fields.setdefault('es_administrador', True)
         return self._crear_usuario(correo, password, **extra_fields)
 

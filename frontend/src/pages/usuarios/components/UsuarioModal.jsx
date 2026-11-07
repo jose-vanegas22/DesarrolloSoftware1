@@ -88,6 +88,8 @@ export default function UsuarioModal({ usuario, onCerrar, onGuardado }) {
     }
   };
 
+  const rolesDisponibles = ROLES.filter((rol) => rol.campo !== "es_administrador" || usuario?.es_administrador);
+
   const mostrarError = (campo) => errores[campo] && <p className="mensaje-error">{errores[campo][0]}</p>;
 
   return (
@@ -129,9 +131,15 @@ export default function UsuarioModal({ usuario, onCerrar, onGuardado }) {
 
         <fieldset className="usuario-modal-roles">
           <legend>Roles</legend>
-          {ROLES.map((rol) => (
+          {rolesDisponibles.map((rol) => (
             <label key={rol.campo}>
-              <input type="checkbox" name={rol.campo} checked={formulario[rol.campo]} onChange={handleChange} />
+              <input
+                type="checkbox"
+                name={rol.campo}
+                checked={formulario[rol.campo]}
+                disabled={rol.campo === "es_administrador"}
+                onChange={handleChange}
+              />
               {rol.texto}
             </label>
           ))}
@@ -141,7 +149,13 @@ export default function UsuarioModal({ usuario, onCerrar, onGuardado }) {
           <fieldset className="usuario-modal-roles">
             <legend>Estado</legend>
             <label>
-              <input type="checkbox" name="activo" checked={formulario.activo} onChange={handleChange} />
+              <input
+                type="checkbox"
+                name="activo"
+                checked={formulario.activo}
+                disabled={usuario.es_administrador}
+                onChange={handleChange}
+              />
               Usuario activo
             </label>
           </fieldset>

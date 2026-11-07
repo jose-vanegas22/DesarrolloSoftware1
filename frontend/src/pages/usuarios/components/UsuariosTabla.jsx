@@ -47,14 +47,16 @@ export default function UsuariosTabla({ usuarios, onEditar, onBorrar }) {
                     >
                       <Pencil size={16} aria-hidden="true" />
                     </button>
-                    <button
-                      className="usuarios-accion"
-                      type="button"
-                      aria-label={`Borrar a ${usuario.nombres} ${usuario.apellidos}`}
-                      onClick={() => onBorrar(usuario)}
-                    >
-                      <Trash2 size={16} aria-hidden="true" />
-                    </button>
+                    {!usuario.es_administrador && (
+                      <button
+                        className="usuarios-accion"
+                        type="button"
+                        aria-label={`Borrar a ${usuario.nombres} ${usuario.apellidos}`}
+                        onClick={() => onBorrar(usuario)}
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                      </button>
+                    )}
                   </div>
                 </td>
               )}
