@@ -97,7 +97,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                    description='Devuelve los datos y roles del usuario que inició sesión.')
     @extend_schema(methods=['PATCH'], summary='Editar mi perfil',
                    description='Permite cambiar nombres, apellidos y teléfono del usuario que inició sesión.')
-    @action(detail=False, methods=['get', 'patch']) # Permite a los usuarios ver y editar su propio perfil, y a los gestores ver y editar cualquier perfil
+    @action(detail=False, methods=['get', 'patch'], permission_classes=[IsAuthenticated]) # Permite a los usuarios ver y editar su propio perfil, y a los gestores ver y editar cualquier perfil
     def perfil(self, request):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)

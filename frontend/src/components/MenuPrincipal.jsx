@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react";
 // Indica que opciones puede ver cada rol, y el texto que se muestra en el menu
 const OPCIONES = [
   { ruta: "/inicio", texto: "Inicio", roles: ["administrador", "comite", "autor"] },
-  { ruta: "/usuarios", texto: "Usuarios", roles: ["administrador", "comite", "autor"] },
+  { ruta: "/usuarios", texto: "Usuarios", roles: ["administrador", "comite"] },
   { ruta: "/perfil", texto: "Mi perfil", roles: ["administrador", "comite", "autor"] },
 ];
 
