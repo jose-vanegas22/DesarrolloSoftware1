@@ -1,4 +1,4 @@
-from rest_framework.permissions import SAFE_METHODS, BasePermission
+from rest_framework.permissions import BasePermission
 from .models import ROLES
 
 
@@ -14,14 +14,11 @@ def es_gestor(request):
 
 # Tiene 2 funciones porque el DRF revisa los permisos en dos momentos de la aplicacion
 class PermisoUsuarios(BasePermission):
-    # Una peticion primero pasa por aqui, GET, PUT, PATCH los deja pasar, POST, DELETE los bloquea si es autor
+    # listar, crear y borrar quedan solo para gestores. Consultar o editar a un usuario concreto pasa a la segunda revisión.
     def has_permission(self, request, view):
-        if request.method in SAFE_METHODS or request.method in ('PUT', 'PATCH'):
-            return True
-        return es_gestor(request)
+        return view.action in ('retrieve', 'update', 'partial_update') or es_gestor(request)
 
-    # Este segundo filtra segun a quien afecta la peticion, si es a otro usuario, solo los gestores pueden hacerlo, pero si eres autor y te quieres modificar tu mismo te deja
+    # un gestor puede actuar sobre cualquier usuario; los demás, solo sobre sí mismos.
     def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS or es_gestor(request):
-            return True
-        return request.method in ('PUT', 'PATCH') and obj == request.user
+        return es_gestor(request) or obj == request.user
+

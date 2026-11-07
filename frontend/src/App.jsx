@@ -32,7 +32,15 @@ export default function App() {
           }
         >
           <Route path="/inicio" element={<InicioPage />} />
-          <Route path="/usuarios" element={<UsuariosPage />} />
+          <Route
+            path="/usuarios"
+            element={
+              <RutaProtegida roles={["administrador", "comite"]}>
+                <UsuariosPage />
+              </RutaProtegida>
+            }
+          />
+
           <Route path="/perfil" element={<PerfilPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/inicio" replace />} />
