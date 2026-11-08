@@ -16,7 +16,7 @@ class ArticuloSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Articulo
-        fields = ['id', 'evento', 'titulo', 'resumen', 'palabras_clave', 'linea_tematica', 'afiliacion', 'coautores', 'estado', 'creado']
+        fields = ['id', 'evento', 'evento_nombre', 'titulo', 'resumen', 'palabras_clave', 'linea_tematica', 'linea_tematica_nombre', 'afiliacion', 'coautores', 'estado', 'estado_nombre', 'creado']
         read_only_fields = ['estado', 'creado'] # Evita que el estado y la fecha de creación sean modificables por el usuario
 
     # Nos permite rechazar el evento si esta inactiva, si no tiene fecha de postulacion configurada o si ya vencio
@@ -33,6 +33,11 @@ class ArticuloSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('No puedes repetir el correo de un autor.')
             correos.add(correo)
         return coautores
+
+    evento_nombre = serializers.CharField(source='evento.nombre', read_only=True) # Permite mostrar el nombre del evento en la respuesta del serializer, sin necesidad de hacer otra consulta a la base de datos.
+    linea_tematica_nombre = serializers.CharField(source='get_linea_tematica_display', read_only=True)
+    estado_nombre = serializers.CharField(source='get_estado_display', read_only=True)
+    
 
     # Guarda el articulo y al autor responsable
     @transaction.atomic # Agrupa las operaciones en una sola transaccion, si falla el registro del autor responsable tambien el del articulo
