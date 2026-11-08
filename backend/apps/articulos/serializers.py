@@ -1,8 +1,7 @@
+from django.conf import settings
 from django.db import transaction
 from rest_framework import serializers
-from .models import Articulo, Autor
-
-
+from .models import Articulo, Autor, VersionArticulo
 
 class CoautorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -57,3 +56,33 @@ class ArticuloSerializer(serializers.ModelSerializer):
             Autor.objects.create(articulo=articulo, **coautor)
 
         return articulo
+
+
+
+# Se agrego para subir los PDF de los articulos, valida que sea PDF y que no supere el tamaño maximo
+class VersionArticuloSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VersionArticulo
+        fields = ['id', 'tipo', 'archivo', 'creado']
+        read_only_fields = ['tipo', 'creado']
+        extra_kwargs = {'archivo': {'write_only': True}}
+
+    def validate_archivo(self, archivo):
+        if archivo.size > settings.TAMANO_MAXIMO_PDF_MB * 1024 * 1024:
+            raise serializers.ValidationError(f'El PDF no puede superar {settings.TAMANO_MAXIMO_PDF_MB} MB.')
+
+        archivo.seek(0)
+        es_pdf = archivo.name.lower().endswith('.pdf') and archivo.read(5) == b'%PDF-'
+        archivo.seek(0)
+        if not es_pdf:
+            raise serializers.ValidationError('Solo se permiten archivos PDF.')
+        return archivo
+
+    def validate(self, attrs):
+        articulo = self.context['articulo']
+        if not articulo.evento.postulacion_abierta:
+            raise serializers.ValidationError('La postulación de esta conferencia no está abierta.')
+        if articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).exists():
+            raise serializers.ValidationError('Este artículo ya tiene un PDF inicial.')
+        return attrs
+

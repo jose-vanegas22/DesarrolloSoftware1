@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from botocore.config import Config
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -122,6 +123,31 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+
+# Archivos subidos (PDF de los articulos) en Supabase Storage por medio del protocolo S3
+STORAGES = {
+    'default': {
+        'BACKEND': 'storages.backends.s3.S3Storage',
+        'OPTIONS': {
+            'bucket_name': os.getenv('SUPABASE_S3_BUCKET'),
+            'endpoint_url': os.getenv('SUPABASE_S3_ENDPOINT'),
+            'region_name': os.getenv('SUPABASE_S3_REGION'),
+            'access_key': os.getenv('SUPABASE_S3_ACCESS_KEY_ID'),
+            'secret_key': os.getenv('SUPABASE_S3_SECRET_ACCESS_KEY'),
+            'addressing_style': 'path',
+            'signature_version': 's3v4',
+            'file_overwrite': False,
+            'client_config': Config(request_checksum_calculation='when_required', response_checksum_validation='when_required'),
+        },
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
+
+TAMANO_MAXIMO_PDF_MB = 10
 
 
 # Email

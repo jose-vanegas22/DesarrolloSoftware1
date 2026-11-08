@@ -1,11 +1,12 @@
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { createArticulo } from "../../api/articulosApi";
+import { createArticulo, subirPdf } from "../../api/articulosApi";
 import { getEventos } from "../../api/eventosApi";
 import { getPerfil } from "../../api/usuariosApi";
 import CampoFormulario from "../../components/CampoFormulario";
 import "./PostularArticuloPage.css";
+
 
 const LINEAS_TEMATICAS = [
   { valor: "sistemas_inteligentes", texto: "Sistemas Inteligentes" },
@@ -14,6 +15,8 @@ const LINEAS_TEMATICAS = [
   { valor: "sistemas_software", texto: "Sistemas de Software" },
   { valor: "software_practica", texto: "Software en la práctica" },
 ];
+
+const TAMANO_MAXIMO_PDF_MB = 10;
 
 export default function PostularArticuloPage() {
   const [parametros] = useSearchParams(); // Nos ayuda a ller el evento que esta seleccionado en la URL para dejarla seleccionada
@@ -29,6 +32,8 @@ export default function PostularArticuloPage() {
     afiliacion: "",
   });
   const [coautores, setCoautores] = useState([]);
+  const [pdf, setPdf] = useState(null);
+  const [articuloId, setArticuloId] = useState(null);
   const [errores, setErrores] = useState({});
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -68,14 +73,26 @@ export default function PostularArticuloPage() {
     )));
   };
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     setErrores({});
+
+    if (pdf.size > TAMANO_MAXIMO_PDF_MB * 1024 * 1024) {
+      setErrores({ archivo: [`El PDF no puede superar ${TAMANO_MAXIMO_PDF_MB} MB.`] });
+      return;
+    }
+
     setEnviando(true);
 
     try {
-      await createArticulo({ ...formulario, coautores });
-      navigate("/conferencias", { state: { mensaje: "Artículo postulado correctamente." } }); // Redirige a la pagina de conferencias y le pasa un mensaje cuando el articulo se creo con exito
+      let id = articuloId;
+      if (!id) {
+        const { data } = await createArticulo({ ...formulario, coautores });
+        id = data.id;
+        setArticuloId(id);
+      }
+      await subirPdf(id, pdf);
+      navigate("/conferencias", { state: { mensaje: "Artículo postulado correctamente." } });
     } catch (err) {
       const datos = err.response?.data;
       setErrores(typeof datos === "object" && datos !== null
@@ -84,6 +101,7 @@ export default function PostularArticuloPage() {
       setEnviando(false);
     }
   };
+
 
   const mostrarError = (campo) => errores[campo] && <p className="mensaje-error">{[errores[campo]].flat()[0]}</p>;
 
@@ -111,6 +129,7 @@ export default function PostularArticuloPage() {
       </div>
 
       <form className="articulo-tarjeta" onSubmit={handleSubmit}>
+        <fieldset className="articulo-datos" disabled={Boolean(articuloId)}>
         <h2>Datos del artículo</h2>
 
         <div>
@@ -198,6 +217,19 @@ export default function PostularArticuloPage() {
           <Plus size={16} aria-hidden="true" />
           Agregar coautor
         </button>
+        </fieldset>
+
+        {articuloId && <p className="mensaje-exito">El artículo quedó registrado. Solo falta subir el PDF.</p>}
+
+        <h2>Artículo en PDF</h2>
+
+        <div>
+          <div className="campo">
+            <label htmlFor="articulo-pdf">Archivo PDF (máximo {TAMANO_MAXIMO_PDF_MB} MB)</label>
+            <input id="articulo-pdf" type="file" accept="application/pdf,.pdf" onChange={(e) => setPdf(e.target.files[0] ?? null)} required />
+          </div>
+          {mostrarError("archivo")}
+        </div>
 
         {mostrarError("non_field_errors")}
         {mostrarError("detail")}
