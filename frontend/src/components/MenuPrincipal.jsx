@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router";
 import { cerrarSesion, obtenerRolActivo } from "../api/authApi";
 import "./MenuPrincipal.css";
-import { CalendarDays, House, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound, Users, X } from "lucide-react";
+import { CalendarDays, FileText, House, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound, Users, X } from "lucide-react";
 
 
 // Indica que opciones puede ver cada rol, y el texto que se muestra en el menu
@@ -10,6 +10,7 @@ const OPCIONES = [
   { ruta: "/inicio", texto: "Inicio", icono: House, roles: ["administrador", "comite", "autor"] },
   { ruta: "/usuarios", texto: "Usuarios", icono: Users, roles: ["administrador", "comite"] },
   { ruta: "/conferencias", texto: "Conferencias", icono: CalendarDays, roles: ["administrador", "comite", "autor"] },
+  { ruta: "/articulos", texto: "Artículos", icono: FileText, roles: ["administrador", "comite", "autor"] },
   { ruta: "/perfil", texto: "Mi perfil", icono: UserRound, roles: ["administrador", "comite", "autor"] },
 ];
 

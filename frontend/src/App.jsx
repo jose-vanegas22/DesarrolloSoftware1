@@ -8,6 +8,8 @@ import SeleccionarRolPage from "./pages/seleccionar-rol/SeleccionarRolPage";
 import UsuariosPage from "./pages/usuarios/UsuariosPage";
 import ConferenciasPage from "./pages/conferencias/ConferenciasPage";
 import PostularArticuloPage from "./pages/articulos/PostularArticuloPage";
+import ArticulosPage from "./pages/articulos/ArticulosPage";
+
 
 export default function App() {
   return (
@@ -43,6 +45,7 @@ export default function App() {
             }
           />
           <Route path="/conferencias" element={<ConferenciasPage />} />
+          <Route path="/articulos" element={<ArticulosPage />} />
           <Route
             path="/articulos/postular"
             element={
