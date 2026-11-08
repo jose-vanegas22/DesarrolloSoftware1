@@ -1,5 +1,8 @@
 from django.conf import settings
 from django.db import models
+import uuid
+from django.conf import settings
+from django.db import models
 
 
 class Articulo(models.Model):
@@ -48,3 +51,27 @@ class Autor(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+# Nos permite guardar el archivo 
+def ruta_pdf(version, nombre):
+    return f'{version.articulo_id}/{uuid.uuid4().hex}.pdf'
+
+
+# Cada PDF entregado de un articulo. Se guardan todas para conservar el historial.
+class VersionArticulo(models.Model):
+    class Tipo(models.TextChoices):
+        INICIAL = 'inicial', 'Inicial'
+        CORREGIDA = 'corregida', 'Corregida'
+        FINAL = 'final', 'Final'
+
+    articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, related_name='versiones')
+    tipo = models.CharField(max_length=20, choices=Tipo.choices)
+    archivo = models.FileField(upload_to=ruta_pdf)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['creado']
+
+    def __str__(self):
+        return f'{self.articulo} - {self.get_tipo_display()}'

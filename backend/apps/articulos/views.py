@@ -1,10 +1,13 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from apps.usuarios.permissions import es_gestor, obtener_rol_activo
-from .models import Articulo
+from .models import Articulo, VersionArticulo
 from .permissions import PermisoArticulos
-from .serializers import ArticuloSerializer
+from .serializers import ArticuloSerializer, VersionArticuloSerializer
 
 
 @extend_schema_view(
@@ -48,3 +51,17 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.G
         if estado:
             articulos = articulos.filter(estado=estado)
         return articulos
+
+
+
+    @extend_schema(summary='Subir PDF inicial',
+                description='Solo el autor responsable, dentro del plazo de postulación. Solo PDF del tamaño máximo permitido.')
+    @action(detail=True, methods=['post'], url_path='pdf', serializer_class=VersionArticuloSerializer, parser_classes=[MultiPartParser])
+    def pdf(self, request, pk=None):
+        articulo = self.get_object()
+        contexto = {**self.get_serializer_context(), 'articulo': articulo}
+        serializer = self.get_serializer(data=request.data, context=contexto)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(articulo=articulo, tipo=VersionArticulo.Tipo.INICIAL)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
