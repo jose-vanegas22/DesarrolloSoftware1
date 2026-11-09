@@ -7,7 +7,7 @@ from drf_spectacular.utils import extend_schema_field
 class CoautorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Autor
-        fields = ['nombre', 'afiliacion', 'correo']
+        fields = ['id', 'nombre', 'afiliacion', 'correo']
 
 
 class ArticuloSerializer(serializers.ModelSerializer):
@@ -63,9 +63,11 @@ class ArticuloSerializer(serializers.ModelSerializer):
 class ArticuloDetalleSerializer(ArticuloSerializer):
     autores = serializers.SerializerMethodField()
     fecha_pdf = serializers.SerializerMethodField()
+    postulacion_abierta = serializers.BooleanField(source='evento.postulacion_abierta', read_only=True)
+
 
     class Meta(ArticuloSerializer.Meta):
-        fields = ArticuloSerializer.Meta.fields + ['autores', 'fecha_pdf']
+        fields = ArticuloSerializer.Meta.fields + ['autores', 'fecha_pdf', 'postulacion_abierta']
 
     @extend_schema_field(CoautorSerializer(many=True))
     def get_autores(self, articulo):
