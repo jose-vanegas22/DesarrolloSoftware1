@@ -9,6 +9,7 @@ import UsuariosPage from "./pages/usuarios/UsuariosPage";
 import ConferenciasPage from "./pages/conferencias/ConferenciasPage";
 import PostularArticuloPage from "./pages/articulos/PostularArticuloPage";
 import ArticulosPage from "./pages/articulos/ArticulosPage";
+import ArticuloDetallePage from "./pages/articulos/ArticuloDetallePage";
 
 
 export default function App() {
@@ -46,6 +47,7 @@ export default function App() {
           />
           <Route path="/conferencias" element={<ConferenciasPage />} />
           <Route path="/articulos" element={<ArticulosPage />} />
+          <Route path="/articulos/:id" element={<ArticuloDetallePage />} />
           <Route
             path="/articulos/postular"
             element={

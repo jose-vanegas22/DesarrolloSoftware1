@@ -1,0 +1,142 @@
+.detalle-pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detalle-encabezado {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.detalle-encabezado h1 {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.detalle-volver {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  color: var(--color-principal);
+  background-color: var(--color-fondo);
+}
+
+.detalle-volver:hover {
+  background-color: #ece7de;
+}
+
+.detalle-columnas {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  align-items: start;
+  gap: 16px;
+}
+
+.detalle-columna {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.detalle-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--color-borde);
+  border-radius: 16px;
+  box-shadow: var(--sombra-suave);
+}
+
+.detalle-tarjeta h2 {
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-borde);
+  font-size: 1rem;
+}
+
+.detalle-tarjeta h3 {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-texto-secundario);
+}
+
+.detalle-datos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 0;
+}
+
+.detalle-datos dt {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-texto-secundario);
+}
+
+.detalle-datos dd {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.detalle-texto {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.detalle-autores {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detalle-autores p {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-texto-secundario);
+  overflow-wrap: anywhere;
+}
+
+.detalle-autores .detalle-etiqueta {
+  margin-left: 8px;
+}
+
+.detalle-etiqueta {
+  display: inline-block;
+  padding: 4px 9px;
+  border: 1px solid var(--color-borde);
+  border-radius: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background-color: #efebe3;
+}
+
+@media (max-width: 900px) {
+  .detalle-columnas,
+  .detalle-datos {
+    grid-template-columns: 1fr;
+  }
+
+  .detalle-tarjeta {
+    padding: 16px;
+  }
+}

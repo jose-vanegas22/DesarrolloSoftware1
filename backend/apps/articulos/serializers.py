@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import transaction
 from rest_framework import serializers
 from .models import Articulo, Autor, VersionArticulo
+from drf_spectacular.utils import extend_schema_field
 
 class CoautorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -56,6 +57,25 @@ class ArticuloSerializer(serializers.ModelSerializer):
             Autor.objects.create(articulo=articulo, **coautor)
 
         return articulo
+
+
+
+class ArticuloDetalleSerializer(ArticuloSerializer):
+    autores = serializers.SerializerMethodField()
+    fecha_pdf = serializers.SerializerMethodField()
+
+    class Meta(ArticuloSerializer.Meta):
+        fields = ArticuloSerializer.Meta.fields + ['autores', 'fecha_pdf']
+
+    @extend_schema_field(CoautorSerializer(many=True))
+    def get_autores(self, articulo):
+        return CoautorSerializer(articulo.autores.order_by('id'), many=True).data
+
+    @extend_schema_field(serializers.DateTimeField(allow_null=True))
+    def get_fecha_pdf(self, articulo):
+        version = articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).first()
+        return serializers.DateTimeField().to_representation(version.creado) if version else None
+
 
 
 
