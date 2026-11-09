@@ -1,12 +1,13 @@
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import TokenBlacklistView, TokenRefreshView
 from apps.usuarios.views import LoginView
 
 
 urlpatterns = [
     path('api/token/', LoginView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
     path('api/', include('apps.usuarios.urls')),  # Incluye las rutas de la app usuarios
     path('api/', include('apps.eventos.urls')),
     path('api/', include('apps.articulos.urls')),

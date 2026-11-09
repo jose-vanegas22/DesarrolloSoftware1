@@ -34,8 +34,16 @@ export const seleccionarRol = async (rol) => {
 export const registrarAutor = (datos) => api.post("/usuarios/registro/", datos); 
 
 
-// Borra los datos del navegador, no llama al backend
-export const cerrarSesion = () => {
+// Invalida el refresh token en el backend y luego borra los datos del navegador
+export const cerrarSesion = async () => {
+  const refresh = localStorage.getItem("refresh");
+
+  try {
+    if (refresh) await api.post("/token/blacklist/", { refresh });
+  } catch {
+    // Si el backend no responde, igual se cierra la sesion en el navegador
+  }
+
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
   localStorage.removeItem("roles");
