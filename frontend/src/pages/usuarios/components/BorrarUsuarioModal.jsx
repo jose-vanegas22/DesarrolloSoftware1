@@ -17,8 +17,9 @@ export default function BorrarUsuarioModal({ usuario, onCerrar, onBorrado }) {
     try {
       await deleteUsuario(usuario.id);
       onBorrado();
-    } catch {
-      setError("No se pudo borrar el usuario. Intenta de nuevo.");
+    } catch (err) {
+      const detalle = err.response?.data?.detail;
+      setError(detalle ? [detalle].flat()[0] : "No se pudo borrar el usuario. Intenta de nuevo.");
       setBorrando(false);
     }
   };
