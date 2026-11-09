@@ -107,11 +107,13 @@ export default function ArticulosPage() {
                   <td className="articulos-estado">
                     <span className="articulos-etiqueta">{articulo.estado_nombre}</span>
                   </td>
+                  
                   <td className="articulos-acciones">
                     <Link className="articulos-accion" to={`/articulos/${articulo.id}`} aria-label={`Ver detalle de ${articulo.titulo}`} title="Ver detalle">
                       <Eye size={16} aria-hidden="true" />
                     </Link>
                   </td>
+
                 </tr>
               ))}
             </tbody>

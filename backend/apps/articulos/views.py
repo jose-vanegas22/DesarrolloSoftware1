@@ -8,6 +8,10 @@ from apps.usuarios.permissions import es_gestor, obtener_rol_activo
 from .models import Articulo, VersionArticulo
 from .permissions import PermisoArticulos
 from .serializers import ArticuloDetalleSerializer, ArticuloSerializer, VersionArticuloSerializer
+from django.shortcuts import get_object_or_404
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 
 
 
@@ -75,4 +79,23 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
         serializer.is_valid(raise_exception=True)
         serializer.save(articulo=articulo, tipo=VersionArticulo.Tipo.INICIAL)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+
+    @extend_schema(summary='Quitar coautor', request=None, responses={204: None},
+                parameters=[OpenApiParameter('autor_id', int, OpenApiParameter.PATH, description='Id del coautor')],
+                description='Solo el autor responsable y dentro del plazo de postulación. No permite quitar al autor responsable.')
+    @action(detail=True, methods=['delete'], url_path=r'autores/(?P<autor_id>\d+)')
+    def quitar_coautor(self, request, pk=None, autor_id=None):
+        articulo = self.get_object()
+        autor = get_object_or_404(articulo.autores, id=autor_id)
+
+        if autor.correo.lower() == articulo.autor_responsable.correo.lower():
+            raise ValidationError({'detail': 'No se puede quitar al autor responsable.'})
+        if not articulo.evento.postulacion_abierta:
+            raise ValidationError({'detail': 'La postulación de esta conferencia ya no está abierta.'})
+
+        autor.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 

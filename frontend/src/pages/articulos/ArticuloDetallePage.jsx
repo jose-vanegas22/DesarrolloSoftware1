@@ -1,8 +1,11 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { getArticulo } from "../../api/articulosApi";
+import { obtenerRolActivo } from "../../api/authApi";
+import QuitarCoautorModal from "./components/QuitarCoautorModal";
 import "./ArticuloDetallePage.css";
+
 
 const formatearFecha = (fecha) =>
   new Date(fecha).toLocaleString("es-CO", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -11,6 +14,9 @@ export default function ArticuloDetallePage() {
   const { id } = useParams();
   const [articulo, setArticulo] = useState(null);
   const [error, setError] = useState("");
+  const [coautorQuitado, setCoautorQuitado] = useState(null);
+  const [mensaje, setMensaje] = useState("");
+  const esAutor = obtenerRolActivo() === "autor";
 
   useEffect(() => {
     getArticulo(id)
@@ -19,6 +25,14 @@ export default function ArticuloDetallePage() {
         ? "No se encontró el artículo o no tienes permiso para verlo."
         : "No se pudo cargar el artículo."));
   }, [id]);
+
+
+  const handleQuitado = () => {
+    setArticulo({ ...articulo, autores: articulo.autores.filter((autor) => autor.id !== coautorQuitado.id) });
+    setMensaje("Coautor quitado correctamente.");
+    setCoautorQuitado(null);
+  };
+
 
   const volver = (
     <Link className="detalle-volver" to="/articulos" aria-label="Volver a artículos">
@@ -48,6 +62,8 @@ export default function ArticuloDetallePage() {
         </div>
       </div>
 
+      {mensaje && <p className="mensaje-exito">{mensaje}</p>}
+
       <div className="detalle-columnas">
         <div className="detalle-columna">
           <div className="detalle-tarjeta">
@@ -76,11 +92,18 @@ export default function ArticuloDetallePage() {
             <h2>Autores</h2>
             <ul className="detalle-autores">
               {articulo.autores.map((autor, indice) => (
-                <li key={autor.correo}>
-                  <strong>{autor.nombre}</strong>
-                  {indice === 0 && <span className="detalle-etiqueta">Responsable</span>}
-                  <p>{autor.afiliacion}</p>
-                  <p>{autor.correo}</p>
+                <li key={autor.id}>
+                  <div>
+                    <strong>{autor.nombre}</strong>
+                    {indice === 0 && <span className="detalle-etiqueta">Responsable</span>}
+                    <p>{autor.afiliacion}</p>
+                    <p>{autor.correo}</p>
+                  </div>
+                  {esAutor && articulo.postulacion_abierta && indice > 0 && (
+                    <button className="detalle-quitar" type="button" aria-label={`Quitar a ${autor.nombre}`} title="Quitar coautor" onClick={() => { setMensaje(""); setCoautorQuitado(autor); }}>
+                      <X size={16} aria-hidden="true" />
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -94,6 +117,16 @@ export default function ArticuloDetallePage() {
             : <p className="detalle-texto">Todavía no se ha entregado el PDF.</p>}
         </div>
       </div>
+
+      {coautorQuitado && (
+        <QuitarCoautorModal
+          articuloId={articulo.id}
+          coautor={coautorQuitado}
+          onCerrar={() => setCoautorQuitado(null)}
+          onQuitado={handleQuitado}
+        />
+      )}
+      
     </section>
   );
 }
