@@ -27,8 +27,8 @@ export default function MenuPrincipal() {
   const rolActivo = obtenerRolActivo();
   const opciones = OPCIONES.filter((opcion) => opcion.roles.includes(rolActivo)); // Deja unicamente las opciones del rol activo, para que no se muestren opciones que no puede ver el usuario
 
-  const handleCerrarSesion = () => {
-    cerrarSesion();
+  const handleCerrarSesion = async () => {
+    await cerrarSesion();
     navigate("/login", { replace: true });
   };
 
