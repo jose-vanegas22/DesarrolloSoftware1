@@ -115,6 +115,23 @@
   background-color: #efebe3;
 }
 
+
+.articulos-accion {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  color: var(--color-principal);
+  background-color: var(--color-fondo);
+}
+
+.articulos-accion:hover {
+  background-color: #ece7de;
+}
+
+
 @media (max-width: 900px) {
   .articulos-encabezado {
     align-items: stretch;
@@ -179,4 +196,9 @@
   .articulos-tabla .articulos-estado {
     margin-top: 10px;
   }
+
+    .articulos-tabla .articulos-acciones {
+    margin-top: 10px;
+  }
+
 }

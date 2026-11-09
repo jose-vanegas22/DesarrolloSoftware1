@@ -1,4 +1,4 @@
-import { Filter, Plus } from "lucide-react";
+import { Eye, Filter, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { getArticulos } from "../../api/articulosApi";
@@ -95,6 +95,7 @@ export default function ArticulosPage() {
                 <th>Línea temática</th>
                 <th>Conferencia</th>
                 <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -105,6 +106,11 @@ export default function ArticulosPage() {
                   <td className="articulos-dato">{articulo.evento_nombre}</td>
                   <td className="articulos-estado">
                     <span className="articulos-etiqueta">{articulo.estado_nombre}</span>
+                  </td>
+                  <td className="articulos-acciones">
+                    <Link className="articulos-accion" to={`/articulos/${articulo.id}`} aria-label={`Ver detalle de ${articulo.titulo}`} title="Ver detalle">
+                      <Eye size={16} aria-hidden="true" />
+                    </Link>
                   </td>
                 </tr>
               ))}

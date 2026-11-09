@@ -7,7 +7,8 @@ from rest_framework.response import Response
 from apps.usuarios.permissions import es_gestor, obtener_rol_activo
 from .models import Articulo, VersionArticulo
 from .permissions import PermisoArticulos
-from .serializers import ArticuloSerializer, VersionArticuloSerializer
+from .serializers import ArticuloDetalleSerializer, ArticuloSerializer, VersionArticuloSerializer
+
 
 
 @extend_schema_view(
@@ -21,16 +22,26 @@ from .serializers import ArticuloSerializer, VersionArticuloSerializer
         ],
     ),
 
+    retrieve=extend_schema(
+        summary='Ver detalle del artículo',
+        description='Administrador y comité ven cualquier artículo; el autor solo los propios. No incluye deshabilitados.',
+    ),
+
+
     create=extend_schema(
         summary='Registrar artículo',
         description='Solo con rol activo de autor y dentro del plazo de postulación.',
     ),
 )
-class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet): # El post viene heredado de CreateModelMixin y el resto de GenericViewSet, ListModelMixin agrega el GET para listar
+class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet): # El post viene heredado de CreateModelMixin y el resto de GenericViewSet, ListModelMixin agrega el GET para listar
     queryset = Articulo.objects.all()
     serializer_class = ArticuloSerializer
     permission_classes = [IsAuthenticated, PermisoArticulos]
 
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ArticuloDetalleSerializer
+        return super().get_serializer_class()
 
     # Nos permite filtrar los articulos que se devuelven en la lista, dependiendo del rol del usuario y de los parametros de busqueda que se le pasen en 
     #la url
