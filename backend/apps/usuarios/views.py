@@ -50,8 +50,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
     ),
     destroy=extend_schema(
         summary='Borrar usuario',
-        description='Solo administradores y miembros del comité.',
+        description='Solo administradores y miembros del comité. No se puede borrar al administrador '
+                    'ni a usuarios que sean autores responsables de artículos.',
     ),
+
 )
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
@@ -74,6 +76,8 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         if instance.es_administrador:
             raise ValidationError({'detail': 'No se puede borrar al administrador del sistema.'})
+        if instance.articulos.exists():
+            raise ValidationError({'detail': 'No se puede borrar porque es autor responsable de artículos. Desactívalo en su lugar.'})
         instance.delete()
 
     def get_queryset(self): # Filtra los usuarios segun los parametros de la peticion, si es gestor puede ver todos los usuarios, si es autor solo puede ver su propio perfil
