@@ -14,6 +14,8 @@ Aplicación web con una **API REST en Django** y un **frontend en React**, con l
 | Peticiones HTTP | axios |
 | Navegación | React Router |
 | Gráficos | ApexCharts (react-apexcharts) |
+| Almacenamiento de archivos | Supabase Storage (protocolo S3) con django-storages y boto3 |
+| Seguridad del login | Google reCAPTCHA v2 |
 
 ## Estructura del repositorio
 
@@ -66,6 +68,7 @@ Copy-Item .env.example .env
 Abre `backend/.env` y completa los valores:
 
 - `DB_USER`, `DB_PASSWORD` y `DB_HOST`: pídeselos al responsable del proyecto por un medio privado.
+- `SUPABASE_S3_ENDPOINT`, `SUPABASE_S3_REGION`, `SUPABASE_S3_ACCESS_KEY_ID` y `SUPABASE_S3_SECRET_ACCESS_KEY`: credenciales del bucket donde se guardan los PDF de los artículos. Pídeselas al responsable del proyecto por un medio privado. `SUPABASE_S3_BUCKET` ya viene con el valor `articulos`.
 - `RECAPTCHA_SECRET_KEY`: para desarrollo usa la clave de prueba de Google `6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe`.
 - `SECRET_KEY`: genera una propia con:
 
@@ -125,6 +128,8 @@ La documentación interactiva de la API está en http://127.0.0.1:8000/api/docs/
 | POST | `/api/token/` | Recibe `correo`, `password` y `captcha` (token de reCAPTCHA) y devuelve los tokens `access` y `refresh`. Tras 5 intentos fallidos, la cuenta se bloquea 15 minutos. |
 | POST | `/api/token/refresh/` | Recibe `refresh` y devuelve un `access` nuevo |
 | POST | `/api/usuarios/registro/` | Registro público de autores. Recibe `correo`, `password`, `nombres`, `apellidos`, `telefono` y `captcha` |
+| POST | `/api/token/blacklist/` | Cierra la sesión: recibe `refresh` y lo invalida, para que ya no sirva para obtener nuevos tokens |
+
 
 
 El token `access` dura 15 minutos y el `refresh` 120 minutos. Los demás endpoints requieren el header `Authorization: Bearer <access>`.
@@ -147,6 +152,20 @@ En el backend, el rol activo se obtiene con `obtener_rol_activo(request)` de `ap
 - **Archivos `.env`:** nunca se suben a Git. Si agregas una variable nueva, agrégala también al `.env.example`.
 - **Swagger:** cada endpoint lleva `summary` (qué hace) y `description` (quién puede usarlo y reglas importantes) con `extend_schema`.
 
+
+## Flujo de trabajo con Git
+
+1. Actualiza `main` y crea una rama por HU:
+
+   ```powershell
+   git switch main
+   git pull
+   git switch -c feature/SCRUM-XX-nombre-corto
+   ```
+
+2. Haz commits con la clave de Jira al inicio: `SCRUM-XX Agrega ...`
+3. Sube tu rama y crea un pull request hacia `main`.
+4. Nunca trabajes directamente sobre `main`.
 
 ## Después de hacer `git pull`
 
