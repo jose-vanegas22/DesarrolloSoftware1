@@ -1,6 +1,6 @@
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, Pencil, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import { getArticulo, reemplazarPdfArticulo } from "../../api/articulosApi";
 import { obtenerRolActivo } from "../../api/authApi";
 import QuitarCoautorModal from "./components/QuitarCoautorModal";
@@ -20,7 +20,8 @@ export default function ArticuloDetallePage() {
   const [articulo, setArticulo] = useState(null);
   const [error, setError] = useState("");
   const [coautorQuitado, setCoautorQuitado] = useState(null);
-  const [mensaje, setMensaje] = useState("");
+  const { state } = useLocation(); // Recibe el mensaje que deja la pantalla de edicion al guardar
+  const [mensaje, setMensaje] = useState(state?.mensaje ?? "");
   const esAutor = obtenerRolActivo() === "autor";
   const [nuevoArchivo, setNuevoArchivo] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
@@ -128,6 +129,12 @@ export default function ArticuloDetallePage() {
           <h1>{articulo.titulo}</h1>
           <span className="detalle-etiqueta">{articulo.estado_nombre}</span>
         </div>
+        {esAutor && articulo.postulacion_abierta && (
+          <Link className="boton boton-secundario detalle-editar" to={`/articulos/${articulo.id}/editar`}>
+            <Pencil size={16} aria-hidden="true" />
+            Editar
+          </Link>
+        )}
       </div>
 
       {mensaje && <p className="mensaje-exito">{mensaje}</p>}

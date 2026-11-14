@@ -5,16 +5,8 @@ import { createArticulo, subirPdf } from "../../api/articulosApi";
 import { getEventos } from "../../api/eventosApi";
 import { getPerfil } from "../../api/usuariosApi";
 import CampoFormulario from "../../components/CampoFormulario";
+import { LINEAS_TEMATICAS } from "./lineasTematicas";
 import "./PostularArticuloPage.css";
-
-
-const LINEAS_TEMATICAS = [
-  { valor: "sistemas_inteligentes", texto: "Sistemas Inteligentes" },
-  { valor: "tecnologias_informatica", texto: "Tecnologías en Informática" },
-  { valor: "educacion_informatica", texto: "Educación en Informática" },
-  { valor: "sistemas_software", texto: "Sistemas de Software" },
-  { valor: "software_practica", texto: "Software en la práctica" },
-];
 
 const TAMANO_MAXIMO_PDF_MB = 10;
 

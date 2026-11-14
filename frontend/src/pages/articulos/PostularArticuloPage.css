@@ -123,7 +123,9 @@
   outline-offset: 1px;
 }
 
-.articulo-tarjeta input:disabled {
+.articulo-tarjeta input:disabled,
+.articulo-tarjeta select:disabled,
+.articulo-tarjeta textarea:disabled {
   color: var(--color-texto-secundario);
   background-color: #ece7de;
   cursor: not-allowed;
