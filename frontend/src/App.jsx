@@ -10,6 +10,7 @@ import ConferenciasPage from "./pages/conferencias/ConferenciasPage";
 import PostularArticuloPage from "./pages/articulos/PostularArticuloPage";
 import ArticulosPage from "./pages/articulos/ArticulosPage";
 import ArticuloDetallePage from "./pages/articulos/ArticuloDetallePage";
+import AsignarRevisoresPage from "./pages/articulos/AsignarRevisoresPage";
 
 
 export default function App() {
@@ -48,6 +49,10 @@ export default function App() {
           <Route path="/conferencias" element={<ConferenciasPage />} />
           <Route path="/articulos" element={<ArticulosPage />} />
           <Route path="/articulos/:id" element={<ArticuloDetallePage />} />
+          <Route path="/articulos/:id/revisores" element={<RutaProtegida roles={["comite"]}>
+            <AsignarRevisoresPage />
+          </RutaProtegida>}
+          />
           <Route
             path="/articulos/postular"
             element={
