@@ -10,3 +10,11 @@ export const subirPdf = (id, archivo) => {
   datos.append("archivo", archivo);
   return api.post(`/articulos/${id}/pdf/`, datos);
 };
+
+export const reemplazarPdfArticulo = (id, formData) => {
+  return api.patch(`/articulos/${id}/reemplazar-pdf/`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
