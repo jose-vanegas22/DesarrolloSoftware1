@@ -134,6 +134,20 @@ export default function ArticuloDetallePage() {
 
       <div className="detalle-columnas">
         <div className="detalle-columna">
+          
+          {/* TARJETA DE ESTADO AGREGADA PARA LA HU-19 */}
+          <div className="detalle-tarjeta">
+            <h2>Estado del artículo</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
+              <span className="detalle-etiqueta" style={{ fontSize: "1rem", padding: "0.4rem 0.8rem" }}>
+                {articulo.estado_nombre || "Estado no disponible"}
+              </span>
+            </div>
+            <p className="detalle-texto" style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#555" }}>
+              Etapa actual en la que se encuentra tu postulación.
+            </p>
+          </div>
+
           <div className="detalle-tarjeta">
             <h2>Información</h2>
             <dl className="detalle-datos">
