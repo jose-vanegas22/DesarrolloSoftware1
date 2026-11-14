@@ -28,8 +28,6 @@ export default function ArticuloDetallePage() {
   const inputArchivoRef = useRef(null);
 
   useEffect(() => {
-    setArticulo(null);
-    setError("");
     getArticulo(id)
       .then(({ data }) => setArticulo(data))
       .catch((err) =>
@@ -210,35 +208,26 @@ export default function ArticuloDetallePage() {
           )}
 
           {esAutor && articulo.postulacion_abierta ? (
-            <form
-              onSubmit={handleReemplazarPdf}
-              style={{ marginTop: "1rem", borderTop: "1px solid #eee", paddingTop: "1rem" }}
-            >
+            <form className="detalle-reemplazo" onSubmit={handleReemplazarPdf}>
               <h3>Reemplazar archivo PDF</h3>
-              <input
-                ref={inputArchivoRef}
-                type="file"
-                accept="application/pdf"
-                onChange={handleCambioArchivo}
-                style={{ display: "block", margin: "0.5rem 0" }}
-              />
-              {errorPdf && <p style={{ color: "red", fontSize: "0.85rem" }}>{errorPdf}</p>}
-
-              <button
-                type="submit"
-                disabled={!nuevoArchivo || cargandoPdf}
-                style={{
-                  marginTop: "0.5rem",
-                  padding: "0.5rem 1rem",
-                  cursor: nuevoArchivo ? "pointer" : "not-allowed",
-                }}
-              >
+              <div className="campo">
+                <label htmlFor="detalle-pdf">Nuevo archivo PDF (máximo 10 MB)</label>
+                <input
+                  id="detalle-pdf"
+                  ref={inputArchivoRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  onChange={handleCambioArchivo}
+                />
+              </div>
+              {errorPdf && <p className="mensaje-error">{errorPdf}</p>}
+              <button className="boton boton-principal" type="submit" disabled={!nuevoArchivo || cargandoPdf}>
                 {cargandoPdf ? "Subiendo..." : "Subir nuevo PDF"}
               </button>
             </form>
           ) : (
-            <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "1rem" }}>
-              El plazo para reemplazar el PDF ha finalizado o no tienes permisos de autor.
+            <p className="detalle-texto detalle-aviso">
+              El plazo para reemplazar el PDF ya terminó.
             </p>
           )}
         </div>

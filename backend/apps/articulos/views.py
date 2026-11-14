@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from apps.usuarios.permissions import es_gestor, obtener_rol_activo
 from .models import Articulo, VersionArticulo
 from .permissions import PermisoArticulos
-from .serializers import ArticuloDetalleSerializer, ArticuloSerializer, VersionArticuloSerializer
+from .serializers import ArticuloDetalleSerializer, ArticuloSerializer, ReemplazoPdfSerializer, VersionArticuloSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -97,5 +97,20 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
 
         autor.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+    @extend_schema(summary='Reemplazar el PDF inicial',
+        description='Solo el autor responsable, dentro del plazo de postulación. Guarda una versión nueva; '
+        'la anterior se conserva en el historial.')
+    @action(detail=True, methods=['patch'], url_path='reemplazar-pdf', serializer_class=ReemplazoPdfSerializer,
+            parser_classes=[MultiPartParser])
+    def reemplazar_pdf(self, request, pk=None):
+        articulo = self.get_object()
+        contexto = {**self.get_serializer_context(), 'articulo': articulo}
+        serializer = self.get_serializer(data=request.data, context=contexto)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(articulo=articulo, tipo=VersionArticulo.Tipo.INICIAL)
+        return Response(serializer.data)
 
 
