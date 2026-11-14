@@ -7,9 +7,7 @@ from rest_framework.response import Response
 from apps.usuarios.permissions import es_gestor, obtener_rol_activo
 from .models import Articulo, VersionArticulo
 from .permissions import PermisoArticulos
-from .serializers import ArticuloDetalleSerializer, ArticuloSerializer, VersionArticuloSerializer
-from .serializers import ArticuloDetalleSerializer, ArticuloEdicionSerializer, ArticuloSerializer, VersionArticuloSerializer
-from .serializers import ArticuloDetalleSerializer, ArticuloSerializer, ReemplazoPdfSerializer, VersionArticuloSerializer
+from .serializers import ArticuloDetalleSerializer, ArticuloEdicionSerializer, ArticuloSerializer, ReemplazoPdfSerializer, VersionArticuloSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -108,13 +106,6 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-    def partial_update(self, request, *args, **kwargs):
-        articulo = self.get_object()
-        if not articulo.evento.postulacion_abierta:
-            raise ValidationError({'detail': 'La postulación de esta conferencia ya no está abierta; el artículo no se puede modificar.'})
-        serializer = self.get_serializer(articulo, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
 
     @extend_schema(summary='Reemplazar el PDF inicial',
         description='Solo el autor responsable, dentro del plazo de postulación. Guarda una versión nueva; '
@@ -127,6 +118,15 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
         serializer = self.get_serializer(data=request.data, context=contexto)
         serializer.is_valid(raise_exception=True)
         serializer.save(articulo=articulo, tipo=VersionArticulo.Tipo.INICIAL)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        articulo = self.get_object()
+        if not articulo.evento.postulacion_abierta:
+            raise ValidationError({'detail': 'La postulación de esta conferencia ya no está abierta; el artículo no se puede modificar.'})
+        serializer = self.get_serializer(articulo, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data)
 
 
