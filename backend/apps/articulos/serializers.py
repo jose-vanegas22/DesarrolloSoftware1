@@ -75,7 +75,7 @@ class ArticuloDetalleSerializer(ArticuloSerializer):
 
     @extend_schema_field(serializers.DateTimeField(allow_null=True))
     def get_fecha_pdf(self, articulo):
-        version = articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).first()
+        version = articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).last()
         return serializers.DateTimeField().to_representation(version.creado) if version else None
 
 
@@ -107,4 +107,16 @@ class VersionArticuloSerializer(serializers.ModelSerializer):
         if articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).exists():
             raise serializers.ValidationError('Este artículo ya tiene un PDF inicial.')
         return attrs
+
+
+# Reemplazo del PDF inicial: misma validacion del archivo, pero exige que ya exista un PDF
+class ReemplazoPdfSerializer(VersionArticuloSerializer):
+    def validate(self, attrs):
+        articulo = self.context['articulo']
+        if not articulo.evento.postulacion_abierta:
+            raise serializers.ValidationError('La postulación de esta conferencia no está abierta.')
+        if not articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).exists():
+            raise serializers.ValidationError('El artículo todavía no tiene un PDF inicial; primero debe subirlo.')
+        return attrs
+
 
