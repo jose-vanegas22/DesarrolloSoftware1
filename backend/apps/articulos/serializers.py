@@ -79,6 +79,11 @@ class ArticuloDetalleSerializer(ArticuloSerializer):
         return serializers.DateTimeField().to_representation(version.creado) if version else None
 
 
+# Edicion de un articulo: solo los datos que el autor puede corregir
+class ArticuloEdicionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Articulo
+        fields = ['titulo', 'resumen', 'palabras_clave', 'linea_tematica']
 
 
 # Se agrego para subir los PDF de los articulos, valida que sea PDF y que no supere el tamaño maximo
