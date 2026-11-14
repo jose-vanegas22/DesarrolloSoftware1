@@ -7,4 +7,6 @@ class PermisoArticulos(BasePermission):
         rol = obtener_rol_activo(request) # Lee el rol y lo guarda
         if view.action in ('list', 'retrieve'): # Consultar la lista o el detalle se permite a cualquier rol valido
             return rol is not None
+        if view.action == 'revisores': # Asignar y consultar revisores queda solo para el comite
+            return rol == 'comite'
         return rol == 'autor'

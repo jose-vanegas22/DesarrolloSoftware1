@@ -1,3 +1,4 @@
+from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -5,9 +6,15 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from apps.usuarios.permissions import es_gestor, obtener_rol_activo
-from .models import Articulo, VersionArticulo
+from .models import Articulo, AsignacionRevisor, VersionArticulo
 from .permissions import PermisoArticulos
-from .serializers import ArticuloDetalleSerializer, ArticuloSerializer, VersionArticuloSerializer
+from .serializers import (
+    ArticuloDetalleSerializer,
+    ArticuloSerializer,
+    AsignacionRevisorSerializer,
+    AsignarRevisoresSerializer,
+    VersionArticuloSerializer,
+)
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -97,5 +104,56 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
 
         autor.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+    @extend_schema(
+        methods=['GET'],
+        summary='Consultar revisores asignados',
+        description='Solo con rol activo de comite. Devuelve las asignaciones registradas del articulo.',
+        responses={200: AsignacionRevisorSerializer(many=True)},
+    )
+    @extend_schema(
+        methods=['POST'],
+        summary='Asignar revisores',
+        description='Solo con rol activo de comite. La postulacion debe estar cerrada y se deben enviar '
+                    'exactamente tres miembros del comite, con experiencia en la linea tematica del articulo, '
+                    'que no sean autores ni coautores y que no tengan ya tres articulos asignados.',
+        request=AsignarRevisoresSerializer,
+        responses={201: AsignacionRevisorSerializer(many=True)},
+    )
+    @action(detail=True, methods=['get', 'post'], url_path='revisores')
+    def revisores(self, request, pk=None):
+        articulo = self.get_object()
+
+        if request.method == 'POST':
+            contexto = {**self.get_serializer_context(), 'articulo': articulo}
+            serializer = AsignarRevisoresSerializer(data=request.data, context=contexto)
+            serializer.is_valid(raise_exception=True)
+            revisores = serializer.validated_data['revisores']
+
+            with transaction.atomic():
+                actuales = {
+                    asignacion.revisor_id: asignacion
+                    for asignacion in articulo.asignaciones_revisores.select_for_update()
+                }
+                ids = {revisor.id for revisor in revisores}
+                articulo.asignaciones_revisores.exclude(revisor_id__in=ids).delete()
+                for revisor in revisores:
+                    asignacion = actuales.get(revisor.id)
+                    if asignacion is None:
+                        AsignacionRevisor.objects.create(
+                            articulo=articulo,
+                            revisor=revisor,
+                            asignado_por=request.user,
+                        )
+                    elif asignacion.asignado_por_id != request.user.id:
+                        asignacion.asignado_por = request.user
+                        asignacion.save(update_fields=['asignado_por'])
+
+            asignaciones = articulo.asignaciones_revisores.select_related('revisor').order_by('creado', 'id')
+            return Response(AsignacionRevisorSerializer(asignaciones, many=True).data, status=status.HTTP_201_CREATED)
+
+        asignaciones = articulo.asignaciones_revisores.select_related('revisor').order_by('creado', 'id')
+        return Response(AsignacionRevisorSerializer(asignaciones, many=True).data)
 
 

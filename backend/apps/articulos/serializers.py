@@ -1,13 +1,71 @@
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
-from .models import Articulo, Autor, VersionArticulo
+from apps.eventos.models import FechaLimite
+from apps.usuarios.models import Usuario
+from .models import MAX_ARTICULOS_POR_REVISOR, Articulo, AsignacionRevisor, Autor, VersionArticulo
 from drf_spectacular.utils import extend_schema_field
 
 class CoautorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Autor
         fields = ['id', 'nombre', 'afiliacion', 'correo']
+
+
+class AsignacionRevisorSerializer(serializers.ModelSerializer):
+    revisor_nombre = serializers.CharField(source='revisor.nombres', read_only=True)
+    revisor_apellidos = serializers.CharField(source='revisor.apellidos', read_only=True)
+    revisor_correo = serializers.EmailField(source='revisor.correo', read_only=True)
+
+    class Meta:
+        model = AsignacionRevisor
+        fields = ['id', 'revisor', 'revisor_nombre', 'revisor_apellidos', 'revisor_correo', 'asignado_por', 'creado']
+        read_only_fields = fields
+
+
+class AsignarRevisoresSerializer(serializers.Serializer):
+    revisores = serializers.PrimaryKeyRelatedField(queryset=Usuario.objects.all(), many=True)
+
+    def validate_revisores(self, revisores):
+        articulo = self.context['articulo']
+
+        fecha_postulacion = articulo.evento.fechas_limite.filter(etapa=FechaLimite.Etapa.POSTULACION).first()
+        if fecha_postulacion is None:
+            raise serializers.ValidationError('El evento no tiene configurada la fecha limite de postulacion.')
+        if timezone.now() <= fecha_postulacion.fecha:
+            raise serializers.ValidationError('La postulacion aun no ha terminado.')
+
+        if len(revisores) != 3:
+            raise serializers.ValidationError('Se deben asignar exactamente tres revisores.')
+
+        ids = [revisor.id for revisor in revisores]
+        if len(set(ids)) != 3:
+            raise serializers.ValidationError('Los tres revisores deben ser diferentes.')
+
+        correos_autores = {articulo.autor_responsable.correo.lower().strip()}
+        correos_autores.update(autor.correo.lower().strip() for autor in articulo.autores.all())
+
+        for revisor in revisores:
+            if not revisor.es_comite:
+                raise serializers.ValidationError(
+                    f'{revisor} no pertenece al comite cientifico.'
+                )
+            if revisor.id == articulo.autor_responsable_id or revisor.correo.lower().strip() in correos_autores:
+                raise serializers.ValidationError(
+                    f'{revisor} es autor o coautor del articulo y no puede revisarlo.'
+                )
+            if articulo.linea_tematica not in (revisor.especialidades or []):
+                raise serializers.ValidationError(
+                    f'{revisor} no tiene experiencia en la linea tematica del articulo.'
+                )
+            asignados = AsignacionRevisor.objects.filter(revisor=revisor).exclude(articulo=articulo).count()
+            if asignados >= MAX_ARTICULOS_POR_REVISOR:
+                raise serializers.ValidationError(
+                    f'{revisor} ya tiene el maximo de {MAX_ARTICULOS_POR_REVISOR} articulos asignados.'
+                )
+
+        return revisores
 
 
 class ArticuloSerializer(serializers.ModelSerializer):

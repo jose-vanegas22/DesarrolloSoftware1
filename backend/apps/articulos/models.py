@@ -58,6 +58,33 @@ def ruta_pdf(version, nombre):
     return f'{version.articulo_id}/{uuid.uuid4().hex}.pdf'
 
 
+# Maximo de articulos que puede revisar un mismo miembro del comite.
+MAX_ARTICULOS_POR_REVISOR = 3
+
+
+# Revisores asignados a un articulo. Se conservan como registro de la asignacion.
+class AsignacionRevisor(models.Model):
+    articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, related_name='asignaciones_revisores')
+    revisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='asignaciones_revisor')
+    asignado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='asignaciones_realizadas',
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['creado', 'id']
+        constraints = [
+            models.UniqueConstraint(fields=['articulo', 'revisor'], name='revisor_unico_por_articulo'),
+        ]
+
+    def __str__(self):
+        return f'{self.articulo} - {self.revisor}'
+
+
 # Cada PDF entregado de un articulo. Se guardan todas para conservar el historial.
 class VersionArticulo(models.Model):
     class Tipo(models.TextChoices):
