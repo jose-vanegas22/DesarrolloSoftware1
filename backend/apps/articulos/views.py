@@ -8,6 +8,7 @@ from apps.usuarios.permissions import es_gestor, obtener_rol_activo
 from .models import Articulo, VersionArticulo
 from .permissions import PermisoArticulos
 from .serializers import ArticuloDetalleSerializer, ArticuloSerializer, VersionArticuloSerializer
+from .serializers import ArticuloDetalleSerializer, ArticuloEdicionSerializer, ArticuloSerializer, VersionArticuloSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -36,6 +37,11 @@ from rest_framework.exceptions import ValidationError
         summary='Registrar artículo',
         description='Solo con rol activo de autor y dentro del plazo de postulación.',
     ),
+
+    partial_update=extend_schema(
+        summary='Modificar artículo',
+        description='Solo el autor responsable, con rol activo de autor y dentro del plazo de postulación. Permite cambiar título, resumen, palabras clave y línea temática; el estado no se puede modificar.',
+    ),
 )
 class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet): # El post viene heredado de CreateModelMixin y el resto de GenericViewSet, ListModelMixin agrega el GET para listar
     queryset = Articulo.objects.all()
@@ -45,6 +51,8 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return ArticuloDetalleSerializer
+        if self.action == 'partial_update':
+            return ArticuloEdicionSerializer
         return super().get_serializer_class()
 
     # Nos permite filtrar los articulos que se devuelven en la lista, dependiendo del rol del usuario y de los parametros de busqueda que se le pasen en 
@@ -97,5 +105,15 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
 
         autor.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+    def partial_update(self, request, *args, **kwargs):
+        articulo = self.get_object()
+        if not articulo.evento.postulacion_abierta:
+            raise ValidationError({'detail': 'La postulación de esta conferencia ya no está abierta; el artículo no se puede modificar.'})
+        serializer = self.get_serializer(articulo, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
