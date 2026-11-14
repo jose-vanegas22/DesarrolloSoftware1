@@ -1,5 +1,5 @@
 import { ArrowLeft, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { getArticulo, reemplazarPdfArticulo } from "../../api/articulosApi";
 import { obtenerRolActivo } from "../../api/authApi";
@@ -25,8 +25,11 @@ export default function ArticuloDetallePage() {
   const [nuevoArchivo, setNuevoArchivo] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
   const [errorPdf, setErrorPdf] = useState("");
+  const inputArchivoRef = useRef(null);
 
   useEffect(() => {
+    setArticulo(null);
+    setError("");
     getArticulo(id)
       .then(({ data }) => setArticulo(data))
       .catch((err) =>
@@ -63,26 +66,38 @@ export default function ArticuloDetallePage() {
     setCargandoPdf(true);
     setErrorPdf("");
 
+    const formData = new FormData();
+    formData.append("archivo", nuevoArchivo);
+
     try {
-      await reemplazarPdfArticulo(articulo.id, nuevoArchivo);
+      await reemplazarPdfArticulo(articulo.id, formData);
       setMensaje("El PDF fue reemplazado correctamente.");
       setNuevoArchivo(null);
+      if (inputArchivoRef.current) inputArchivoRef.current.value = "";
       setArticulo((prev) => ({
         ...prev,
         fecha_pdf: new Date().toISOString(),
       }));
-    } catch (error) {
-      setErrorPdf("No se pudo reemplazar el PDF.");
+    } catch (err) {
+      const status = err.response?.status;
+      setErrorPdf(
+        status === 403
+          ? "No tienes permiso para reemplazar el PDF de este artículo."
+          : status === 413
+            ? "El archivo es demasiado grande."
+            : "No se pudo reemplazar el PDF. Intenta de nuevo."
+      );
     } finally {
       setCargandoPdf(false);
     }
   };
 
   const handleQuitado = () => {
-    setArticulo({
-      ...articulo,
-      autores: articulo.autores.filter((autor) => autor.id !== coautorQuitado.id),
-    });
+    const idQuitado = coautorQuitado.id;
+    setArticulo((prev) => ({
+      ...prev,
+      autores: prev.autores.filter((autor) => autor.id !== idQuitado),
+    }));
     setMensaje("Coautor quitado correctamente.");
     setCoautorQuitado(null);
   };
@@ -187,6 +202,7 @@ export default function ArticuloDetallePage() {
             >
               <h3>Reemplazar archivo PDF</h3>
               <input
+                ref={inputArchivoRef}
                 type="file"
                 accept="application/pdf"
                 onChange={handleCambioArchivo}
