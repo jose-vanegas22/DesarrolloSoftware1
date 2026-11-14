@@ -18,3 +18,8 @@ export const reemplazarPdfArticulo = (id, formData) => {
     },
   });
 };
+// Revisores asignados a un articulo
+export const getRevisores = (id) => api.get(`/articulos/${id}/revisores/`);
+
+// Asigna los tres revisores. revisores es una lista con los id de los usuarios
+export const asignarRevisores = (id, revisores) => api.post(`/articulos/${id}/revisores/`, { revisores });
