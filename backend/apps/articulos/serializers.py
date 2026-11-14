@@ -1,7 +1,9 @@
 from django.conf import settings
 from django.db import transaction
 from rest_framework import serializers
-from .models import Articulo, Autor, VersionArticulo
+from .models import Articulo, Autor, VersionArticulo, Revision
+from .services import validar_revisor, validar_plazo_revision
+from rest_framework.exceptions import APIException
 from drf_spectacular.utils import extend_schema_field
 
 class CoautorSerializer(serializers.ModelSerializer):
@@ -64,10 +66,30 @@ class ArticuloDetalleSerializer(ArticuloSerializer):
     autores = serializers.SerializerMethodField()
     fecha_pdf = serializers.SerializerMethodField()
     postulacion_abierta = serializers.BooleanField(source='evento.postulacion_abierta', read_only=True)
+    pdf_url = serializers.SerializerMethodField()
+    evaluacion = serializers.SerializerMethodField()
 
 
     class Meta(ArticuloSerializer.Meta):
-        fields = ArticuloSerializer.Meta.fields + ['autores', 'fecha_pdf', 'postulacion_abierta']
+        fields = ArticuloSerializer.Meta.fields + ['autores', 'fecha_pdf', 'postulacion_abierta', 'pdf_url', 'evaluacion']
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_pdf_url(self, articulo):
+        version = articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).order_by('-creado', '-pk').first()
+        return version.archivo.url if version and version.archivo else None
+
+    @extend_schema_field(serializers.DictField())
+    def get_evaluacion(self, articulo):
+        # Solo se expone la evaluación propia; no las decisiones de otros revisores.
+        try:
+            asignacion = validar_revisor(self.context['request'], articulo)
+            revision = Revision.objects.filter(asignacion=asignacion).first()
+            if revision:
+                return {'puede_evaluar': False, 'motivo': 'Ya registraste tu evaluación.', 'revision': RevisionSerializer(revision).data}
+            validar_plazo_revision(articulo)
+        except APIException as error:
+            return {'puede_evaluar': False, 'motivo': str(error.detail), 'revision': None}
+        return {'puede_evaluar': True, 'motivo': '', 'revision': None}
 
     @extend_schema_field(CoautorSerializer(many=True))
     def get_autores(self, articulo):
@@ -107,4 +129,11 @@ class VersionArticuloSerializer(serializers.ModelSerializer):
         if articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).exists():
             raise serializers.ValidationError('Este artículo ya tiene un PDF inicial.')
         return attrs
+
+
+class RevisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Revision
+        fields = ['id', 'decision', 'comentarios', 'creado']
+        read_only_fields = ['id', 'creado']
 

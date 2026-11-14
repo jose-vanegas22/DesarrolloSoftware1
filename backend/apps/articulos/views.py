@@ -7,7 +7,8 @@ from rest_framework.response import Response
 from apps.usuarios.permissions import es_gestor, obtener_rol_activo
 from .models import Articulo, VersionArticulo
 from .permissions import PermisoArticulos
-from .serializers import ArticuloDetalleSerializer, ArticuloSerializer, VersionArticuloSerializer
+from .serializers import ArticuloDetalleSerializer, ArticuloSerializer, VersionArticuloSerializer, RevisionSerializer
+from .services import registrar_revision
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -66,6 +67,20 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
         if estado:
             articulos = articulos.filter(estado=estado)
         return articulos
+
+    @extend_schema(
+        summary='Evaluar artículo',
+        description='Solo comité asignado, sin autoría propia, tras cerrar postulaciones y hasta el límite de revisión. Una evaluación por asignación. Dos votos iguales determinan aceptación o rechazo.',
+        request=RevisionSerializer,
+        responses={201: RevisionSerializer},
+    )
+    @action(detail=True, methods=['post'], url_path='evaluacion', serializer_class=RevisionSerializer)
+    def evaluar(self, request, pk=None):
+        articulo = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        revision = registrar_revision(request, articulo, serializer.validated_data)
+        return Response(RevisionSerializer(revision).data, status=status.HTTP_201_CREATED)
 
 
 
