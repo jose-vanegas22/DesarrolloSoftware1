@@ -1,14 +1,19 @@
 import { ArrowLeft, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { getArticulo } from "../../api/articulosApi";
+import { getArticulo, reemplazarPdfArticulo } from "../../api/articulosApi";
 import { obtenerRolActivo } from "../../api/authApi";
 import QuitarCoautorModal from "./components/QuitarCoautorModal";
 import "./ArticuloDetallePage.css";
 
-
 const formatearFecha = (fecha) =>
-  new Date(fecha).toLocaleString("es-CO", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  new Date(fecha).toLocaleString("es-CO", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 export default function ArticuloDetallePage() {
   const { id } = useParams();
@@ -17,22 +22,70 @@ export default function ArticuloDetallePage() {
   const [coautorQuitado, setCoautorQuitado] = useState(null);
   const [mensaje, setMensaje] = useState("");
   const esAutor = obtenerRolActivo() === "autor";
+  const [nuevoArchivo, setNuevoArchivo] = useState(null);
+  const [cargandoPdf, setCargandoPdf] = useState(false);
+  const [errorPdf, setErrorPdf] = useState("");
 
   useEffect(() => {
     getArticulo(id)
       .then(({ data }) => setArticulo(data))
-      .catch((err) => setError(err.response?.status === 404
-        ? "No se encontró el artículo o no tienes permiso para verlo."
-        : "No se pudo cargar el artículo."));
+      .catch((err) =>
+        setError(
+          err.response?.status === 404
+            ? "No se encontró el artículo o no tienes permiso para verlo."
+            : "No se pudo cargar el artículo."
+        )
+      );
   }, [id]);
 
+  const handleCambioArchivo = (event) => {
+    const file = event.target.files?.[0];
+    setErrorPdf("");
+
+    if (!file) {
+      setNuevoArchivo(null);
+      return;
+    }
+
+    if (file.type !== "application/pdf") {
+      setErrorPdf("El archivo debe ser un PDF.");
+      setNuevoArchivo(null);
+      return;
+    }
+
+    setNuevoArchivo(file);
+  };
+
+  const handleReemplazarPdf = async (event) => {
+    event.preventDefault();
+    if (!nuevoArchivo) return;
+
+    setCargandoPdf(true);
+    setErrorPdf("");
+
+    try {
+      await reemplazarPdfArticulo(articulo.id, nuevoArchivo);
+      setMensaje("El PDF fue reemplazado correctamente.");
+      setNuevoArchivo(null);
+      setArticulo((prev) => ({
+        ...prev,
+        fecha_pdf: new Date().toISOString(),
+      }));
+    } catch (error) {
+      setErrorPdf("No se pudo reemplazar el PDF.");
+    } finally {
+      setCargandoPdf(false);
+    }
+  };
 
   const handleQuitado = () => {
-    setArticulo({ ...articulo, autores: articulo.autores.filter((autor) => autor.id !== coautorQuitado.id) });
+    setArticulo({
+      ...articulo,
+      autores: articulo.autores.filter((autor) => autor.id !== coautorQuitado.id),
+    });
     setMensaje("Coautor quitado correctamente.");
     setCoautorQuitado(null);
   };
-
 
   const volver = (
     <Link className="detalle-volver" to="/articulos" aria-label="Volver a artículos">
@@ -100,7 +153,16 @@ export default function ArticuloDetallePage() {
                     <p>{autor.correo}</p>
                   </div>
                   {esAutor && articulo.postulacion_abierta && indice > 0 && (
-                    <button className="detalle-quitar" type="button" aria-label={`Quitar a ${autor.nombre}`} title="Quitar coautor" onClick={() => { setMensaje(""); setCoautorQuitado(autor); }}>
+                    <button
+                      className="detalle-quitar"
+                      type="button"
+                      aria-label={`Quitar a ${autor.nombre}`}
+                      title="Quitar coautor"
+                      onClick={() => {
+                        setMensaje("");
+                        setCoautorQuitado(autor);
+                      }}
+                    >
                       <X size={16} aria-hidden="true" />
                     </button>
                   )}
@@ -112,9 +174,43 @@ export default function ArticuloDetallePage() {
 
         <div className="detalle-tarjeta">
           <h2>Artículo en PDF</h2>
-          {articulo.fecha_pdf
-            ? <p className="detalle-texto">Entregado el {formatearFecha(articulo.fecha_pdf)}</p>
-            : <p className="detalle-texto">Todavía no se ha entregado el PDF.</p>}
+          {articulo.fecha_pdf ? (
+            <p className="detalle-texto">Entregado el {formatearFecha(articulo.fecha_pdf)}</p>
+          ) : (
+            <p className="detalle-texto">Todavía no se ha entregado el PDF.</p>
+          )}
+
+          {esAutor && articulo.postulacion_abierta ? (
+            <form
+              onSubmit={handleReemplazarPdf}
+              style={{ marginTop: "1rem", borderTop: "1px solid #eee", paddingTop: "1rem" }}
+            >
+              <h3>Reemplazar archivo PDF</h3>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={handleCambioArchivo}
+                style={{ display: "block", margin: "0.5rem 0" }}
+              />
+              {errorPdf && <p style={{ color: "red", fontSize: "0.85rem" }}>{errorPdf}</p>}
+
+              <button
+                type="submit"
+                disabled={!nuevoArchivo || cargandoPdf}
+                style={{
+                  marginTop: "0.5rem",
+                  padding: "0.5rem 1rem",
+                  cursor: nuevoArchivo ? "pointer" : "not-allowed",
+                }}
+              >
+                {cargandoPdf ? "Subiendo..." : "Subir nuevo PDF"}
+              </button>
+            </form>
+          ) : (
+            <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "1rem" }}>
+              El plazo para reemplazar el PDF ha finalizado o no tienes permisos de autor.
+            </p>
+          )}
         </div>
       </div>
 
@@ -126,7 +222,7 @@ export default function ArticuloDetallePage() {
           onQuitado={handleQuitado}
         />
       )}
-      
     </section>
   );
 }
+
