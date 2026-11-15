@@ -11,6 +11,7 @@ import PostularArticuloPage from "./pages/articulos/PostularArticuloPage";
 import ArticulosPage from "./pages/articulos/ArticulosPage";
 import ArticuloDetallePage from "./pages/articulos/ArticuloDetallePage";
 import AsignarRevisoresPage from "./pages/articulos/AsignarRevisoresPage";
+import EditarArticuloPage from "./pages/articulos/EditarArticuloPage";
 
 
 export default function App() {
@@ -52,6 +53,14 @@ export default function App() {
           <Route path="/articulos/:id/revisores" element={<RutaProtegida roles={["comite"]}>
             <AsignarRevisoresPage />
           </RutaProtegida>}
+          />
+          <Route
+            path="/articulos/:id/editar"
+            element={
+              <RutaProtegida roles={["autor"]}>
+                <EditarArticuloPage />
+              </RutaProtegida>
+            }
           />
           <Route
             path="/articulos/postular"

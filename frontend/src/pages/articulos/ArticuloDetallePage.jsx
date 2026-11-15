@@ -1,6 +1,6 @@
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, Pencil, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import { getArticulo, reemplazarPdfArticulo } from "../../api/articulosApi";
 import { obtenerRolActivo } from "../../api/authApi";
 import QuitarCoautorModal from "./components/QuitarCoautorModal";
@@ -21,7 +21,8 @@ export default function ArticuloDetallePage() {
   const [articulo, setArticulo] = useState(null);
   const [error, setError] = useState("");
   const [coautorQuitado, setCoautorQuitado] = useState(null);
-  const [mensaje, setMensaje] = useState("");
+  const { state } = useLocation(); // Recibe el mensaje que deja la pantalla de edicion al guardar
+  const [mensaje, setMensaje] = useState(state?.mensaje ?? "");
   const esAutor = obtenerRolActivo() === "autor";
   const esComite = obtenerRolActivo() === "comite";
   const [nuevoArchivo, setNuevoArchivo] = useState(null);
@@ -30,8 +31,6 @@ export default function ArticuloDetallePage() {
   const inputArchivoRef = useRef(null);
 
   useEffect(() => {
-    setArticulo(null);
-    setError("");
     getArticulo(id)
       .then(({ data }) => setArticulo(data))
       .catch((err) =>
@@ -130,6 +129,12 @@ export default function ArticuloDetallePage() {
           <h1>{articulo.titulo}</h1>
           <span className="detalle-etiqueta">{articulo.estado_nombre}</span>
         </div>
+        {esAutor && articulo.postulacion_abierta && (
+          <Link className="boton boton-secundario detalle-editar" to={`/articulos/${articulo.id}/editar`}>
+            <Pencil size={16} aria-hidden="true" />
+            Editar
+          </Link>
+        )}
       </div>
 
       {mensaje && <p className="mensaje-exito">{mensaje}</p>}
@@ -218,35 +223,26 @@ export default function ArticuloDetallePage() {
           )}
 
           {esAutor && articulo.postulacion_abierta ? (
-            <form
-              onSubmit={handleReemplazarPdf}
-              style={{ marginTop: "1rem", borderTop: "1px solid #eee", paddingTop: "1rem" }}
-            >
+            <form className="detalle-reemplazo" onSubmit={handleReemplazarPdf}>
               <h3>Reemplazar archivo PDF</h3>
-              <input
-                ref={inputArchivoRef}
-                type="file"
-                accept="application/pdf"
-                onChange={handleCambioArchivo}
-                style={{ display: "block", margin: "0.5rem 0" }}
-              />
-              {errorPdf && <p style={{ color: "red", fontSize: "0.85rem" }}>{errorPdf}</p>}
-
-              <button
-                type="submit"
-                disabled={!nuevoArchivo || cargandoPdf}
-                style={{
-                  marginTop: "0.5rem",
-                  padding: "0.5rem 1rem",
-                  cursor: nuevoArchivo ? "pointer" : "not-allowed",
-                }}
-              >
+              <div className="campo">
+                <label htmlFor="detalle-pdf">Nuevo archivo PDF (máximo 10 MB)</label>
+                <input
+                  id="detalle-pdf"
+                  ref={inputArchivoRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  onChange={handleCambioArchivo}
+                />
+              </div>
+              {errorPdf && <p className="mensaje-error">{errorPdf}</p>}
+              <button className="boton boton-principal" type="submit" disabled={!nuevoArchivo || cargandoPdf}>
                 {cargandoPdf ? "Subiendo..." : "Subir nuevo PDF"}
               </button>
             </form>
           ) : (
-            <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "1rem" }}>
-              El plazo para reemplazar el PDF ha finalizado o no tienes permisos de autor.
+            <p className="detalle-texto detalle-aviso">
+              El plazo para reemplazar el PDF ya terminó.
             </p>
           )}
         </div>

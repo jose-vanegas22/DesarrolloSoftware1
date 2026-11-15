@@ -11,9 +11,11 @@ from .models import Articulo, AsignacionRevision, VersionArticulo
 from .permissions import PermisoArticulos
 from .serializers import (
     ArticuloDetalleSerializer,
+    ArticuloEdicionSerializer,
     ArticuloSerializer,
     AsignacionRevisionSerializer,
     AsignarRevisoresSerializer,
+    ReemplazoPdfSerializer,
     VersionArticuloSerializer,
     RevisionSerializer,
 )
@@ -44,6 +46,11 @@ from rest_framework.exceptions import ValidationError
         summary='Registrar artículo',
         description='Solo con rol activo de autor y dentro del plazo de postulación.',
     ),
+
+    partial_update=extend_schema(
+        summary='Modificar artículo',
+        description='Solo el autor responsable, con rol activo de autor y dentro del plazo de postulación. Permite cambiar título, resumen, palabras clave y línea temática; el estado no se puede modificar.',
+    ),
 )
 class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet): # El post viene heredado de CreateModelMixin y el resto de GenericViewSet, ListModelMixin agrega el GET para listar
     queryset = Articulo.objects.all()
@@ -53,6 +60,8 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return ArticuloDetalleSerializer
+        if self.action == 'partial_update':
+            return ArticuloEdicionSerializer
         return super().get_serializer_class()
 
     # Nos permite filtrar los articulos que se devuelven en la lista, dependiendo del rol del usuario y de los parametros de busqueda que se le pasen en 
@@ -165,5 +174,28 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
 
         asignaciones = articulo.asignaciones_revision.select_related('revisor').order_by('creado', 'id')
         return Response(AsignacionRevisionSerializer(asignaciones, many=True).data)
+
+
+    @extend_schema(summary='Reemplazar el PDF inicial',
+        description='Solo el autor responsable, dentro del plazo de postulación. Guarda una versión nueva; '
+        'la anterior se conserva en el historial.')
+    @action(detail=True, methods=['patch'], url_path='reemplazar-pdf', serializer_class=ReemplazoPdfSerializer,
+            parser_classes=[MultiPartParser])
+    def reemplazar_pdf(self, request, pk=None):
+        articulo = self.get_object()
+        contexto = {**self.get_serializer_context(), 'articulo': articulo}
+        serializer = self.get_serializer(data=request.data, context=contexto)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(articulo=articulo, tipo=VersionArticulo.Tipo.INICIAL)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        articulo = self.get_object()
+        if not articulo.evento.postulacion_abierta:
+            raise ValidationError({'detail': 'La postulación de esta conferencia ya no está abierta; el artículo no se puede modificar.'})
+        serializer = self.get_serializer(articulo, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
