@@ -4,6 +4,41 @@
   gap: 20px;
 }
 
+.evaluacion-formulario,
+.evaluacion-formulario fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.evaluacion-tarjeta select,
+.evaluacion-tarjeta textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--color-texto);
+  background: var(--color-fondo);
+  box-shadow: var(--sombra-hundida);
+}
+
+.evaluacion-tarjeta textarea {
+  resize: vertical;
+}
+
+.evaluacion-tarjeta select:focus,
+.evaluacion-tarjeta textarea:focus {
+  outline: 2px solid var(--color-principal);
+  outline-offset: 1px;
+}
+
 .detalle-encabezado {
   display: flex;
   align-items: flex-start;

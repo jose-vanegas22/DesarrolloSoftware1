@@ -4,7 +4,9 @@ from django.utils import timezone
 from rest_framework import serializers
 from apps.eventos.models import FechaLimite
 from apps.usuarios.models import Usuario
-from .models import MAX_ARTICULOS_POR_REVISOR, Articulo, AsignacionRevisor, Autor, VersionArticulo
+from .models import MAX_ARTICULOS_POR_REVISOR, Articulo, AsignacionRevision, Autor, VersionArticulo, Revision
+from .services import validar_revisor, validar_plazo_revision
+from rest_framework.exceptions import APIException
 from drf_spectacular.utils import extend_schema_field
 
 class CoautorSerializer(serializers.ModelSerializer):
@@ -13,14 +15,14 @@ class CoautorSerializer(serializers.ModelSerializer):
         fields = ['id', 'nombre', 'afiliacion', 'correo']
 
 
-class AsignacionRevisorSerializer(serializers.ModelSerializer):
+class AsignacionRevisionSerializer(serializers.ModelSerializer):
     revisor_nombre = serializers.CharField(source='revisor.nombres', read_only=True)
     revisor_apellidos = serializers.CharField(source='revisor.apellidos', read_only=True)
     revisor_correo = serializers.EmailField(source='revisor.correo', read_only=True)
 
     class Meta:
-        model = AsignacionRevisor
-        fields = ['id', 'revisor', 'revisor_nombre', 'revisor_apellidos', 'revisor_correo', 'asignado_por', 'creado']
+        model = AsignacionRevision
+        fields = ['id', 'revisor', 'revisor_nombre', 'revisor_apellidos', 'revisor_correo', 'creado']
         read_only_fields = fields
 
 
@@ -59,7 +61,7 @@ class AsignarRevisoresSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     f'{revisor} no tiene experiencia en la linea tematica del articulo.'
                 )
-            asignados = AsignacionRevisor.objects.filter(revisor=revisor).exclude(articulo=articulo).count()
+            asignados = AsignacionRevision.objects.filter(revisor=revisor).exclude(articulo=articulo).count()
             if asignados >= MAX_ARTICULOS_POR_REVISOR:
                 raise serializers.ValidationError(
                     f'{revisor} ya tiene el maximo de {MAX_ARTICULOS_POR_REVISOR} articulos asignados.'
@@ -122,10 +124,30 @@ class ArticuloDetalleSerializer(ArticuloSerializer):
     autores = serializers.SerializerMethodField()
     fecha_pdf = serializers.SerializerMethodField()
     postulacion_abierta = serializers.BooleanField(source='evento.postulacion_abierta', read_only=True)
+    pdf_url = serializers.SerializerMethodField()
+    evaluacion = serializers.SerializerMethodField()
 
 
     class Meta(ArticuloSerializer.Meta):
-        fields = ArticuloSerializer.Meta.fields + ['autores', 'fecha_pdf', 'postulacion_abierta']
+        fields = ArticuloSerializer.Meta.fields + ['autores', 'fecha_pdf', 'postulacion_abierta', 'pdf_url', 'evaluacion']
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_pdf_url(self, articulo):
+        version = articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).order_by('-creado', '-pk').first()
+        return version.archivo.url if version and version.archivo else None
+
+    @extend_schema_field(serializers.DictField())
+    def get_evaluacion(self, articulo):
+        # Solo se expone la evaluación propia; no las decisiones de otros revisores.
+        try:
+            asignacion = validar_revisor(self.context['request'], articulo)
+            revision = Revision.objects.filter(asignacion=asignacion).first()
+            if revision:
+                return {'puede_evaluar': False, 'motivo': 'Ya registraste tu evaluación.', 'revision': RevisionSerializer(revision).data}
+            validar_plazo_revision(articulo)
+        except APIException as error:
+            return {'puede_evaluar': False, 'motivo': str(error.detail), 'revision': None}
+        return {'puede_evaluar': True, 'motivo': '', 'revision': None}
 
     @extend_schema_field(CoautorSerializer(many=True))
     def get_autores(self, articulo):
@@ -165,4 +187,11 @@ class VersionArticuloSerializer(serializers.ModelSerializer):
         if articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).exists():
             raise serializers.ValidationError('Este artículo ya tiene un PDF inicial.')
         return attrs
+
+
+class RevisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Revision
+        fields = ['id', 'decision', 'comentarios', 'creado']
+        read_only_fields = ['id', 'creado']
 

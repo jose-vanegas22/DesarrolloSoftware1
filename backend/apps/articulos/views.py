@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import ProtectedError
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -6,18 +7,18 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from apps.usuarios.permissions import es_gestor, obtener_rol_activo
-from .models import Articulo, AsignacionRevisor, VersionArticulo
+from .models import Articulo, AsignacionRevision, VersionArticulo
 from .permissions import PermisoArticulos
 from .serializers import (
     ArticuloDetalleSerializer,
     ArticuloSerializer,
-    AsignacionRevisorSerializer,
+    AsignacionRevisionSerializer,
     AsignarRevisoresSerializer,
     VersionArticuloSerializer,
+    RevisionSerializer,
 )
+from .services import registrar_revision
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, status, viewsets
-from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 
 
@@ -74,6 +75,20 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
             articulos = articulos.filter(estado=estado)
         return articulos
 
+    @extend_schema(
+        summary='Evaluar artículo',
+        description='Solo comité asignado, sin autoría propia, tras cerrar postulaciones y hasta el límite de revisión. Una evaluación por asignación. Dos votos iguales determinan aceptación o rechazo.',
+        request=RevisionSerializer,
+        responses={201: RevisionSerializer},
+    )
+    @action(detail=True, methods=['post'], url_path='evaluacion', serializer_class=RevisionSerializer)
+    def evaluar(self, request, pk=None):
+        articulo = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        revision = registrar_revision(request, articulo, serializer.validated_data)
+        return Response(RevisionSerializer(revision).data, status=status.HTTP_201_CREATED)
+
 
 
     @extend_schema(summary='Subir PDF inicial',
@@ -110,7 +125,7 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
         methods=['GET'],
         summary='Consultar revisores asignados',
         description='Solo con rol activo de comite. Devuelve las asignaciones registradas del articulo.',
-        responses={200: AsignacionRevisorSerializer(many=True)},
+        responses={200: AsignacionRevisionSerializer(many=True)},
     )
     @extend_schema(
         methods=['POST'],
@@ -119,7 +134,7 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
                     'exactamente tres miembros del comite, con experiencia en la linea tematica del articulo, '
                     'que no sean autores ni coautores y que no tengan ya tres articulos asignados.',
         request=AsignarRevisoresSerializer,
-        responses={201: AsignacionRevisorSerializer(many=True)},
+        responses={201: AsignacionRevisionSerializer(many=True)},
     )
     @action(detail=True, methods=['get', 'post'], url_path='revisores')
     def revisores(self, request, pk=None):
@@ -134,26 +149,21 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
             with transaction.atomic():
                 actuales = {
                     asignacion.revisor_id: asignacion
-                    for asignacion in articulo.asignaciones_revisores.select_for_update()
+                    for asignacion in articulo.asignaciones_revision.select_for_update()
                 }
                 ids = {revisor.id for revisor in revisores}
-                articulo.asignaciones_revisores.exclude(revisor_id__in=ids).delete()
+                try:
+                    articulo.asignaciones_revision.exclude(revisor_id__in=ids).delete()
+                except ProtectedError:
+                    raise ValidationError({'detail': 'No se puede quitar un revisor que ya evaluo el articulo.'})
                 for revisor in revisores:
-                    asignacion = actuales.get(revisor.id)
-                    if asignacion is None:
-                        AsignacionRevisor.objects.create(
-                            articulo=articulo,
-                            revisor=revisor,
-                            asignado_por=request.user,
-                        )
-                    elif asignacion.asignado_por_id != request.user.id:
-                        asignacion.asignado_por = request.user
-                        asignacion.save(update_fields=['asignado_por'])
+                    if revisor.id not in actuales:
+                        AsignacionRevision.objects.create(articulo=articulo, revisor=revisor)
 
-            asignaciones = articulo.asignaciones_revisores.select_related('revisor').order_by('creado', 'id')
-            return Response(AsignacionRevisorSerializer(asignaciones, many=True).data, status=status.HTTP_201_CREATED)
+            asignaciones = articulo.asignaciones_revision.select_related('revisor').order_by('creado', 'id')
+            return Response(AsignacionRevisionSerializer(asignaciones, many=True).data, status=status.HTTP_201_CREATED)
 
-        asignaciones = articulo.asignaciones_revisores.select_related('revisor').order_by('creado', 'id')
-        return Response(AsignacionRevisorSerializer(asignaciones, many=True).data)
+        asignaciones = articulo.asignaciones_revision.select_related('revisor').order_by('creado', 'id')
+        return Response(AsignacionRevisionSerializer(asignaciones, many=True).data)
 
 

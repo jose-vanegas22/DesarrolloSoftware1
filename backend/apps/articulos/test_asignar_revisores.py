@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.eventos.models import Evento, FechaLimite
 from apps.usuarios.models import Usuario
-from .models import Articulo, AsignacionRevisor, Autor
+from .models import Articulo, AsignacionRevision, Autor, Revision
 
 
 # HU-16 (SCRUM-27): asignar tres revisores a un articulo despues de cerrar la postulacion.
@@ -118,13 +118,12 @@ class AsignarRevisoresTests(APITestCase):
         self.assertEqual(respuesta.status_code, status.HTTP_201_CREATED, respuesta.data)
         self.assertEqual(len(respuesta.data), 3)
 
-        asignaciones = AsignacionRevisor.objects.filter(articulo=self.articulo)
+        asignaciones = AsignacionRevision.objects.filter(articulo=self.articulo)
         self.assertEqual(asignaciones.count(), 3)
         self.assertEqual(
             set(asignaciones.values_list('revisor_id', flat=True)),
             {self.comite_1.id, self.comite_2.id, self.comite_3.id},
         )
-        self.assertTrue(all(asignacion.asignado_por == self.comite_1 for asignacion in asignaciones))
 
     def test_consulta_devuelve_las_asignaciones_guardadas(self):
         self.iniciar_sesion(self.comite_1, 'comite')
@@ -146,7 +145,7 @@ class AsignarRevisoresTests(APITestCase):
 
         self.assertEqual(primera.status_code, status.HTTP_201_CREATED, primera.data)
         self.assertEqual(segunda.status_code, status.HTTP_201_CREATED, segunda.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 3)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 3)
 
     # ---- Reglas de negocio ----
 
@@ -157,7 +156,7 @@ class AsignarRevisoresTests(APITestCase):
 
         self.assertEqual(respuesta.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('revisores', respuesta.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 0)
 
     def test_exige_exactamente_tres_revisores(self):
         self.iniciar_sesion(self.comite_1, 'comite')
@@ -166,7 +165,7 @@ class AsignarRevisoresTests(APITestCase):
 
         self.assertEqual(respuesta.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('revisores', respuesta.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 0)
 
     def test_no_permite_revisores_fuera_del_comite(self):
         self.iniciar_sesion(self.comite_1, 'comite')
@@ -175,7 +174,7 @@ class AsignarRevisoresTests(APITestCase):
 
         self.assertEqual(respuesta.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('revisores', respuesta.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 0)
 
     def test_no_permite_asignar_antes_de_la_fecha_limite(self):
         evento_abierto = Evento.objects.create(
@@ -198,7 +197,7 @@ class AsignarRevisoresTests(APITestCase):
 
         self.assertEqual(respuesta.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('revisores', respuesta.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=articulo_abierto).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=articulo_abierto).count(), 0)
 
     def test_no_permite_asignar_si_el_evento_no_tiene_fecha_de_postulacion(self):
         evento_sin_fecha = Evento.objects.create(
@@ -216,7 +215,7 @@ class AsignarRevisoresTests(APITestCase):
 
         self.assertEqual(respuesta.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('revisores', respuesta.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=articulo_sin_fecha).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=articulo_sin_fecha).count(), 0)
 
     def test_no_permite_asignar_al_autor_responsable(self):
         self.iniciar_sesion(self.comite_1, 'comite')
@@ -225,7 +224,7 @@ class AsignarRevisoresTests(APITestCase):
 
         self.assertEqual(respuesta.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('revisores', respuesta.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 0)
 
     def test_no_permite_asignar_a_un_coautor(self):
         self.iniciar_sesion(self.comite_1, 'comite')
@@ -234,7 +233,7 @@ class AsignarRevisoresTests(APITestCase):
 
         self.assertEqual(respuesta.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('revisores', respuesta.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 0)
 
     def test_no_permite_revisores_sin_la_linea_tematica_del_articulo(self):
         self.iniciar_sesion(self.comite_1, 'comite')
@@ -243,30 +242,28 @@ class AsignarRevisoresTests(APITestCase):
 
         self.assertEqual(respuesta.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('revisores', respuesta.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 0)
 
     def test_permite_asignar_si_el_revisor_tiene_dos_articulos_previos(self):
         for _ in range(2):
             otro_articulo = self.crear_articulo(self.autor)
-            AsignacionRevisor.objects.create(
+            AsignacionRevision.objects.create(
                 articulo=otro_articulo,
                 revisor=self.comite_1,
-                asignado_por=self.comite_1,
             )
         self.iniciar_sesion(self.comite_1, 'comite')
 
         respuesta = self.asignar([self.comite_1, self.comite_2, self.comite_3])
 
         self.assertEqual(respuesta.status_code, status.HTTP_201_CREATED, respuesta.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 3)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 3)
 
     def test_no_permite_mas_de_tres_articulos_por_revisor(self):
         for _ in range(3):
             otro_articulo = self.crear_articulo(self.autor)
-            AsignacionRevisor.objects.create(
+            AsignacionRevision.objects.create(
                 articulo=otro_articulo,
                 revisor=self.comite_1,
-                asignado_por=self.comite_1,
             )
         self.iniciar_sesion(self.comite_1, 'comite')
 
@@ -274,7 +271,30 @@ class AsignarRevisoresTests(APITestCase):
 
         self.assertEqual(respuesta.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('revisores', respuesta.data)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 0)
+
+    def test_no_permite_quitar_a_un_revisor_que_ya_evaluo(self):
+        self.iniciar_sesion(self.comite_1, 'comite')
+        self.asignar([self.comite_1, self.comite_2, self.comite_3])
+        asignacion = AsignacionRevision.objects.get(articulo=self.articulo, revisor=self.comite_1)
+        Revision.objects.create(
+            asignacion=asignacion,
+            decision=Revision.Decision.ACEPTAR,
+            comentarios='Trabajo aprobado.',
+        )
+        comite_4 = Usuario.objects.create_user(
+            'comite4@correo.com', 'clave12345',
+            nombres='Irene', apellidos='Comite', es_comite=True,
+            especialidades=[Articulo.LineaTematica.SISTEMAS_INTELIGENTES],
+        )
+
+        respuesta = self.asignar([self.comite_2, self.comite_3, comite_4])
+
+        self.assertEqual(respuesta.status_code, status.HTTP_400_BAD_REQUEST, respuesta.data)
+        self.assertIn('detail', respuesta.data)
+        self.assertTrue(
+            AsignacionRevision.objects.filter(articulo=self.articulo, revisor=self.comite_1).exists()
+        )
 
     # ---- Permisos ----
 
@@ -284,7 +304,7 @@ class AsignarRevisoresTests(APITestCase):
         respuesta = self.asignar([self.comite_1, self.comite_2, self.comite_3])
 
         self.assertEqual(respuesta.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 0)
 
     def test_administrador_no_puede_asignar_revisores(self):
         self.iniciar_sesion(self.administrador, 'administrador')
@@ -292,7 +312,7 @@ class AsignarRevisoresTests(APITestCase):
         respuesta = self.asignar([self.comite_1, self.comite_2, self.comite_3])
 
         self.assertEqual(respuesta.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(AsignacionRevisor.objects.filter(articulo=self.articulo).count(), 0)
+        self.assertEqual(AsignacionRevision.objects.filter(articulo=self.articulo).count(), 0)
 
     def test_sin_sesion_no_puede_asignar_revisores(self):
         respuesta = self.asignar([self.comite_1, self.comite_2, self.comite_3])

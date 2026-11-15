@@ -78,7 +78,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             raise ValidationError({'detail': 'No se puede borrar al administrador del sistema.'})
         if instance.articulos.exists():
             raise ValidationError({'detail': 'No se puede borrar porque es autor responsable de artículos. Desactívalo en su lugar.'})
-        if instance.asignaciones_revisor.exists():
+        if instance.asignaciones_revision.exists():
             raise ValidationError({'detail': 'No se puede borrar porque tiene articulos asignados como revisor. Desactívalo en su lugar.'})
         instance.delete()
 
