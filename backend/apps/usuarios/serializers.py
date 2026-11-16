@@ -170,3 +170,9 @@ class SesionSerializer(serializers.Serializer):
     access = serializers.CharField()
     roles = serializers.ListField(child=serializers.CharField())
     rol_activo = serializers.CharField(allow_null=True)
+
+
+
+# Recibe el correo para solicitar el codigo de recuperacion
+class SolicitarCodigoSerializer(serializers.Serializer):
+    correo = serializers.EmailField()

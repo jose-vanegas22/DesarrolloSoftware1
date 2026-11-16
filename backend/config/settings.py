@@ -154,11 +154,26 @@ TAMANO_MAXIMO_PDF_MB = 10
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# Si hay cuenta de correo en el .env se envian correos reales por Gmail; si no, se imprimen en la consola
+if os.getenv('EMAIL_HOST_USER'):
+    MAILERS = {
+        'default': {
+            'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+            'OPTIONS': {
+                'host': 'smtp.gmail.com',
+                'port': 587,
+                'username': os.getenv('EMAIL_HOST_USER'),
+                'password': os.getenv('EMAIL_HOST_PASSWORD'),
+                'use_tls': True,
+            },
+        },
+    }
+else:
+    MAILERS = {
+        'default': {
+            'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        },
+    }
 
 
 # Aqui añadimos la configuracion DRF
@@ -196,3 +211,7 @@ SPECTACULAR_SETTINGS = {
 RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY')
 LOGIN_MAX_INTENTOS = 5
 LOGIN_MINUTOS_BLOQUEO = 15
+
+# Recuperacion de contraseña
+CODIGO_RECUPERACION_MINUTOS = 15
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Conecta <no-responder@conecta.local>')

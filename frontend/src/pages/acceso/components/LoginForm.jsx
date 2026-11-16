@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { useLocation, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { iniciarSesion } from "../../../api/authApi";
 import CampoFormulario from "../../../components/CampoFormulario";
 
@@ -60,7 +60,7 @@ export default function LoginForm() {
         onChange={(e) => setPassword(e.target.value)}
         required
       />
-      <span className="acceso-olvido">¿Olvidaste tu contraseña?</span>
+      <Link className="acceso-olvido" to="/recuperar">¿Olvidaste tu contraseña?</Link>
 
 
       <div className="acceso-captcha"> 
