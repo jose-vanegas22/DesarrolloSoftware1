@@ -36,6 +36,10 @@ export const registrarAutor = (datos) => api.post("/usuarios/registro/", datos);
 // Pide al backend que envie un codigo de recuperacion al correo
 export const solicitarCodigo = (correo) => api.post("/usuarios/recuperacion/solicitar/", { correo });
 
+// Envia el codigo recibido y la contraseña nueva para restablecerla
+export const restablecerContrasena = (correo, codigo, password) =>
+  api.post("/usuarios/recuperacion/restablecer/", { correo, codigo, password });
+
 
 
 // Invalida el refresh token en el backend y luego borra los datos del navegador
