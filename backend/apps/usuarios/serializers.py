@@ -176,3 +176,16 @@ class SesionSerializer(serializers.Serializer):
 # Recibe el correo para solicitar el codigo de recuperacion
 class SolicitarCodigoSerializer(serializers.Serializer):
     correo = serializers.EmailField()
+
+
+
+
+# Recibe el correo, el codigo de 6 digitos y la contraseña nueva
+class RestablecerContrasenaSerializer(serializers.Serializer):
+    correo = serializers.EmailField()
+    codigo = serializers.RegexField(r'^\d{6}$', error_messages={'invalid': 'El código debe tener 6 dígitos.'})
+    password = serializers.CharField(write_only=True)
+
+    def validate_password(self, value):
+        password_validation.validate_password(value)  # Mismas reglas de seguridad que el registro
+        return value

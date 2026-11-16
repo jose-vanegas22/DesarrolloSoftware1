@@ -215,3 +215,4 @@ LOGIN_MINUTOS_BLOQUEO = 15
 # Recuperacion de contraseña
 CODIGO_RECUPERACION_MINUTOS = 15
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Conecta <no-responder@conecta.local>')
+CODIGO_RECUPERACION_MAX_INTENTOS = 5
