@@ -13,9 +13,10 @@ from .serializers import (
     SeleccionarRolSerializer,
     SesionSerializer,
     SolicitarCodigoSerializer,
+    RestablecerContrasenaSerializer,
     UsuarioSerializer,
 )
-from .services import enviar_codigo_recuperacion
+from .services import enviar_codigo_recuperacion, restablecer_contrasena
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -68,6 +69,8 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             return RegistroSerializer
         if self.action == 'solicitar_codigo':
             return SolicitarCodigoSerializer
+        if self.action == 'restablecer_contrasena':
+            return RestablecerContrasenaSerializer
         if self.action == 'perfil':
             return DatosPersonalesSerializer
         if getattr(self, 'swagger_fake_view', False):
@@ -171,6 +174,26 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         enviar_codigo_recuperacion(serializer.validated_data['correo'])
         return Response({'detail': 'Si el correo está registrado, recibirás un código de recuperación.'})
+
+
+
+    @extend_schema(
+        summary='Restablecer contraseña con el código',
+        description='Endpoint público. Recibe el correo, el código de 6 dígitos y la contraseña nueva. '
+                    'Tras 5 intentos fallidos el código deja de servir. Al cambiarla se cierran las sesiones abiertas.',
+        responses={200: OpenApiResponse(description='Contraseña restablecida'),
+                    400: OpenApiResponse(description='Código no válido o contraseña insegura')},
+    )
+    @action(detail=False, methods=['post'], url_path='recuperacion/restablecer',
+            permission_classes=[AllowAny], authentication_classes=[])
+    def restablecer_contrasena(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+        if not restablecer_contrasena(datos['correo'], datos['codigo'], datos['password']):
+            raise ValidationError({'detail': 'El código no es válido o ya venció. Solicita uno nuevo.'})
+        return Response({'detail': 'Tu contraseña fue restablecida. Ya puedes iniciar sesión.'})
+
 
 
 

@@ -9,7 +9,9 @@ from django.conf import settings
 import secrets
 from datetime import timedelta
 
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password, make_password
+from django.db import transaction
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from django.core.mail import send_mail
 from django.utils import timezone
 
@@ -54,4 +56,36 @@ def enviar_codigo_recuperacion(correo):
         None,
         [usuario.correo],
     )
+
+
+
+# Cambia la contraseña si el codigo es valido. Devuelve True si se cambio y False si el codigo no sirve.
+@transaction.atomic
+def restablecer_contrasena(correo, pin, password):
+    usuario = Usuario.objects.filter(correo__iexact=correo, activo=True).first()
+    if usuario is None:
+        return False
+
+    codigo = usuario.codigos_recuperacion.filter(usado=False, expira__gt=timezone.now()).first()
+    if codigo is None:
+        return False
+
+    if not check_password(pin, codigo.pin):  # Compara el numero escrito con el cifrado
+        codigo.intentos += 1
+        if codigo.intentos >= settings.CODIGO_RECUPERACION_MAX_INTENTOS:
+            codigo.usado = True  # Tras 5 intentos fallidos el codigo deja de servir
+        codigo.save(update_fields=['intentos', 'usado'])
+        return False
+
+    usuario.set_password(password)
+    usuario.intentos_fallidos = 0  # Si estaba bloqueado por intentos de login, se desbloquea
+    usuario.bloqueado_hasta = None
+    usuario.save(update_fields=['password', 'intentos_fallidos', 'bloqueado_hasta'])
+
+    codigo.usado = True
+    codigo.save(update_fields=['usado'])
+
+    for token in OutstandingToken.objects.filter(user=usuario):  # Cierra todas las sesiones abiertas
+        BlacklistedToken.objects.get_or_create(token=token)
+    return True
 
