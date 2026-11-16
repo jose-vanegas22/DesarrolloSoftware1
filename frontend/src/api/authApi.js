@@ -33,6 +33,10 @@ export const seleccionarRol = async (rol) => {
 // Envia los datos del formulario para que se cree la cuenta del autor en el backend. La función devuelve la respuesta del servidor, que puede incluir información sobre el éxito o fracaso del registro.
 export const registrarAutor = (datos) => api.post("/usuarios/registro/", datos); 
 
+// Pide al backend que envie un codigo de recuperacion al correo
+export const solicitarCodigo = (correo) => api.post("/usuarios/recuperacion/solicitar/", { correo });
+
+
 
 // Invalida el refresh token en el backend y luego borra los datos del navegador
 export const cerrarSesion = async () => {
