@@ -35,6 +35,9 @@ DesarrolloSoftware1/
 │   │   └── App.jsx        Rutas
 │   ├── .env.example
 │   └── package.json
+├── e2e/
+│   ├── tests/             Pruebas end to end con Playwright (una por funcionalidad)
+│   └── evidencias/        Capturas que generan las pruebas
 └── README.md
 ```
 
@@ -70,6 +73,7 @@ Abre `backend/.env` y completa los valores:
 - `DB_USER`, `DB_PASSWORD` y `DB_HOST`: pídeselos al responsable del proyecto por un medio privado.
 - `SUPABASE_S3_ENDPOINT`, `SUPABASE_S3_REGION`, `SUPABASE_S3_ACCESS_KEY_ID` y `SUPABASE_S3_SECRET_ACCESS_KEY`: credenciales del bucket donde se guardan los PDF de los artículos. Pídeselas al responsable del proyecto por un medio privado. `SUPABASE_S3_BUCKET` ya viene con el valor `articulos`.
 - `RECAPTCHA_SECRET_KEY`: para desarrollo usa la clave de prueba de Google `6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe`.
+- `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` y `DEFAULT_FROM_EMAIL`: cuenta de Gmail para enviar los códigos de recuperación de contraseña. Son opcionales: si las dejas vacías, los correos se muestran en la terminal de `runserver`, y ahí puedes ver el código para probar.
 - `SECRET_KEY`: genera una propia con:
 
   ```powershell
@@ -121,6 +125,28 @@ python manage.py createsuperuser
 La documentación interactiva de la API está en http://127.0.0.1:8000/api/docs/ (Swagger).
 
 
+## Pruebas end to end
+
+Las pruebas están en `e2e/` y usan Playwright. La primera vez:
+
+```powershell
+cd e2e
+npm install
+npx playwright install chromium
+```
+
+Con el backend y el frontend corriendo, ejecuta las pruebas desde `e2e`:
+
+```powershell
+npx playwright test --headed      # todas, viendo el navegador
+npx playwright show-report        # reporte con el resultado de cada paso
+npx playwright codegen http://localhost:5173/login   # grabar una prueba nueva
+```
+
+El reCAPTCHA se marca con el teclado: en el código, `press('Space')`; al grabar, presiona Tab hasta el captcha y luego Enter.
+
+
+
 ## Endpoints publicos
 
 | Método | URL | Descripción |
@@ -129,6 +155,9 @@ La documentación interactiva de la API está en http://127.0.0.1:8000/api/docs/
 | POST | `/api/token/refresh/` | Recibe `refresh` y devuelve un `access` nuevo |
 | POST | `/api/usuarios/registro/` | Registro público de autores. Recibe `correo`, `password`, `nombres`, `apellidos`, `telefono` y `captcha` |
 | POST | `/api/token/blacklist/` | Cierra la sesión: recibe `refresh` y lo invalida, para que ya no sirva para obtener nuevos tokens |
+| POST | `/api/usuarios/recuperacion/solicitar/` | Recibe `correo` y envía un código de 6 dígitos que vence en 15 minutos. Responde lo mismo aunque el correo no exista |
+| POST | `/api/usuarios/recuperacion/restablecer/` | Recibe `correo`, `codigo` y `password`. Cambia la contraseña y cierra las sesiones abiertas. Tras 5 intentos fallidos el código deja de servir |
+
 
 
 
@@ -175,3 +204,4 @@ En el backend, el rol activo se obtiene con `obtener_rol_activo(request)` de `ap
 | `frontend/package.json` | `npm install` |
 | Alguna carpeta `migrations/` | `python manage.py migrate` |
 | Algún `.env.example` | Agrega a tu `.env` las variables nuevas |
+| `e2e/package.json` | `npm install` dentro de `e2e` |
