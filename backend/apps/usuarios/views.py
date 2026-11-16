@@ -12,9 +12,11 @@ from .serializers import (
     RegistroSerializer,
     SeleccionarRolSerializer,
     SesionSerializer,
+    SolicitarCodigoSerializer,
     UsuarioSerializer,
 )
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from .services import enviar_codigo_recuperacion
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -64,6 +66,8 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             return SeleccionarRolSerializer
         if self.action == 'registro':
             return RegistroSerializer
+        if self.action == 'solicitar_codigo':
+            return SolicitarCodigoSerializer
         if self.action == 'perfil':
             return DatosPersonalesSerializer
         if getattr(self, 'swagger_fake_view', False):
@@ -152,6 +156,23 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             'roles': request.user.roles,
             'rol_activo': refresh['rol_activo'],
         })
+
+
+    @extend_schema(
+        summary='Solicitar código de recuperación',
+        description='Endpoint público. Envía al correo un código de 6 dígitos que vence en 15 minutos. '
+                    'Responde lo mismo aunque el correo no esté registrado o la cuenta esté inactiva.',
+        responses={200: OpenApiResponse(description='Solicitud recibida')},
+    )
+    @action(detail=False, methods=['post'], url_path='recuperacion/solicitar',
+            permission_classes=[AllowAny], authentication_classes=[])
+    def solicitar_codigo(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        enviar_codigo_recuperacion(serializer.validated_data['correo'])
+        return Response({'detail': 'Si el correo está registrado, recibirás un código de recuperación.'})
+
+
 
 
 @extend_schema_view(
