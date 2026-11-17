@@ -22,6 +22,7 @@ export default function App() {
         <Route element={<AccesoPage />}>
           <Route path="/login" element={null} />
           <Route path="/registro" element={null} />
+          <Route path="/recuperar" element={null} />
         </Route>
         <Route
           path="/seleccionar-rol"

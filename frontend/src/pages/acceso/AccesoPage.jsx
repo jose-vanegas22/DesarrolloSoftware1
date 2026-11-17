@@ -2,11 +2,14 @@ import { NavLink, useLocation } from "react-router";
 import LoginForm from "./components/LoginForm";
 import PanelAcceso from "./components/PanelAcceso";
 import RegistroForm from "./components/RegistroForm";
+import RecuperarForm from "./components/RecuperarForm";
 import "./AccesoPage.css";
 
 export default function AccesoPage() {
   const { pathname } = useLocation();
   const esRegistro = pathname === "/registro";
+  const esRecuperar = pathname === "/recuperar";
+
 
   return (
     <main className="acceso-pagina">
@@ -22,7 +25,7 @@ export default function AccesoPage() {
             <NavLink to="/registro">Crear cuenta</NavLink>
           </nav>
 
-          {esRegistro ? <RegistroForm /> : <LoginForm />}
+          {esRegistro ? <RegistroForm /> : esRecuperar ? <RecuperarForm /> : <LoginForm />}
         </section>
 
         <PanelAcceso esRegistro={esRegistro} />
