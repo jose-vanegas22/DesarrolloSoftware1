@@ -5,6 +5,7 @@ import { getArticulo, reemplazarPdfArticulo } from "../../api/articulosApi";
 import { obtenerRolActivo } from "../../api/authApi";
 import QuitarCoautorModal from "./components/QuitarCoautorModal";
 import FormularioEvaluacion from "./components/FormularioEvaluacion";
+import ListaEvaluaciones from "./components/ListaEvaluaciones";
 import "./ArticuloDetallePage.css";
 
 const formatearFecha = (fecha) =>
@@ -248,6 +249,7 @@ export default function ArticuloDetallePage() {
         </div>
       </div>
 
+      {esAutor && <ListaEvaluaciones articuloId={articulo.id} />}
       {esComite && (
         <FormularioEvaluacion
           key={articulo.id}
