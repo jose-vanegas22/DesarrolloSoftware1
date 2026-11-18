@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from apps.articulos.models import Articulo
 from .models import Usuario, ROLES
 from .services import verificar_captcha
 
@@ -13,12 +14,19 @@ from .services import verificar_captcha
 
 class UsuarioSerializer(serializers.ModelSerializer): # Serializer para el modelo de usuario personalizado, que se utilizará para serializar y deserializar los datos del usuario en las vistas de la API
     password = serializers.CharField(write_only=True, required=False) # Campo de contraseña que no se mostrará al serializar el objeto, pero se requerirá al crear o actualizar un usuario
+    # Por ahora solo se acepta al crear o editar; mostrarla en las consultas corresponde a SCRUM-491.
+    especialidades = serializers.ListField(
+        child=serializers.ChoiceField(choices=Articulo.LineaTematica.choices),
+        required=False,
+        allow_empty=True,
+        write_only=True,
+    )
 
     class Meta:
         model = Usuario
         fields = [
             'id', 'correo', 'password', 'nombres', 'apellidos', 'telefono',
-            'es_administrador', 'es_comite', 'es_autor',
+            'es_administrador', 'es_comite', 'es_autor', 'especialidades',
             'correo_verificado', 'activo', 'last_login', 'creado', 'actualizado',
         ]
         read_only_fields = ['correo_verificado', 'last_login', 'creado', 'actualizado'] # Campos que no se podrán modificar al crear o actualizar un usuario
@@ -46,6 +54,18 @@ class UsuarioSerializer(serializers.ModelSerializer): # Serializer para el model
                 raise serializers.ValidationError('El administrador del sistema debe conservar su rol y seguir activo.')
         if self.instance is None and not attrs.get('password'): # Si se está creando un nuevo usuario (self.instance es None) y no se proporciona una contraseña en los datos de entrada (attrs.get('password') es None), se lanza una excepción de validación indicando que la contraseña es obligatoria.
             raise serializers.ValidationError({'password': 'La contraseña es obligatoria.'})
+
+        # Las especialidades solo tienen sentido para miembros del comite cientifico.
+        es_comite = attrs.get('es_comite', getattr(self.instance, 'es_comite', False))
+        especialidades = attrs.get('especialidades', getattr(self.instance, 'especialidades', []))
+        if especialidades and not es_comite:
+            raise serializers.ValidationError({
+                'especialidades': 'Solo un miembro del comite puede tener especialidades.',
+            })
+        if len(set(especialidades)) != len(especialidades):
+            raise serializers.ValidationError({
+                'especialidades': 'No se puede repetir una linea tematica.',
+            })
         return attrs
 
     # Se sobreescribe la conttraseña para lograr encriptarla y no guardarla en texto plano, además de poder actualizarla
