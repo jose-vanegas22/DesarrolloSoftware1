@@ -34,8 +34,7 @@ class Usuario(AbstractBaseUser): # Heredamos de AbstractBaseUser para crear un m
     es_autor = models.BooleanField(default=False)
     correo_verificado = models.BooleanField(default=False)
     activo = models.BooleanField(default=True)
-    # Lineas tematicas en las que el miembro del comite tiene experiencia. Solo aplica a usuarios con es_comite=True.
-    especialidades = models.JSONField(default=list, blank=True)
+    especialidades = models.JSONField(default=list, blank=True)  # Lineas tematicas en las que el miembro del comite tiene experiencia. Solo aplica a usuarios con es_comite=True.
     intentos_fallidos = models.PositiveSmallIntegerField(default=0) # Nuevo campo que agregamos para contar los intentos fallidos de inicio de sesión
     bloqueado_hasta = models.DateTimeField(null=True, blank=True) # Nuevo campo que agregamos para almacenar la fecha y hora hasta la cual el usuario está bloqueado
     creado = models.DateTimeField(auto_now_add=True)

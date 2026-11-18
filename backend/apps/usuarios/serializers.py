@@ -14,12 +14,10 @@ from .services import verificar_captcha
 
 class UsuarioSerializer(serializers.ModelSerializer): # Serializer para el modelo de usuario personalizado, que se utilizará para serializar y deserializar los datos del usuario en las vistas de la API
     password = serializers.CharField(write_only=True, required=False) # Campo de contraseña que no se mostrará al serializar el objeto, pero se requerirá al crear o actualizar un usuario
-    # Por ahora solo se acepta al crear o editar; mostrarla en las consultas corresponde a SCRUM-491.
     especialidades = serializers.ListField(
         child=serializers.ChoiceField(choices=Articulo.LineaTematica.choices),
         required=False,
         allow_empty=True,
-        write_only=True,
     )
 
     class Meta:
@@ -89,8 +87,8 @@ class UsuarioSerializer(serializers.ModelSerializer): # Serializer para el model
 class DatosPersonalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['id', 'correo', 'nombres', 'apellidos', 'telefono', 'es_administrador', 'es_comite', 'es_autor']
-        read_only_fields = ['id', 'correo', 'es_administrador', 'es_comite', 'es_autor']
+        fields = ['id', 'correo', 'nombres', 'apellidos', 'telefono', 'es_administrador', 'es_comite', 'es_autor', 'especialidades']
+        read_only_fields = ['id', 'correo', 'es_administrador', 'es_comite', 'es_autor', 'especialidades']
 
 
 
