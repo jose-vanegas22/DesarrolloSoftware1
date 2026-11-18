@@ -76,6 +76,20 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
 
 
 
+    @extend_schema(
+        summary='Deshabilitar artículo', request=None, responses={204: None},
+        description='Solo con rol activo de administrador o comité. Retira el artículo de las consultas '
+        'sin borrar sus autores ni versiones. La acción es irreversible: la API no permite reactivarlo. '
+        'Devuelve 404 si el artículo no existe o ya está deshabilitado. La interfaz debe pedir confirmación previa.',
+    )
+    @action(detail=True, methods=['post'], url_path='deshabilitar')
+    def deshabilitar(self, request, pk=None):
+        articulo = self.get_object()
+        # Solo cambia la disponibilidad; conserva el estado de revision y los datos asociados.
+        articulo.activo = False
+        articulo.save(update_fields=['activo', 'actualizado'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @extend_schema(summary='Subir PDF inicial',
                 description='Solo el autor responsable, dentro del plazo de postulación. Solo PDF del tamaño máximo permitido.')
     @action(detail=True, methods=['post'], url_path='pdf', serializer_class=VersionArticuloSerializer, parser_classes=[MultiPartParser])
