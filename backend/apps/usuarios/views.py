@@ -43,7 +43,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
     ),
     create=extend_schema(
         summary='Crear usuario',
-        description='Solo administradores y miembros del comité. El usuario debe tener al menos un rol.',
+        description='Solo administradores y miembros del comité. El usuario debe tener al menos un rol. '
+                    'Solo el administrador puede asignar especialidades.',
     ),
     retrieve=extend_schema(
         summary='Consultar un usuario',
@@ -52,11 +53,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
     update=extend_schema(
         summary='Actualizar usuario (completo)',
         description='Administradores y comité pueden editar a cualquier usuario. '
-                    'Los demás solo pueden editar sus propios nombres, apellidos y teléfono.',
+                    'Los demás solo pueden editar sus propios nombres, apellidos y teléfono. '
+                    'Solo el administrador puede asignar o modificar especialidades.',
     ),
     partial_update=extend_schema(
         summary='Actualizar usuario (parcial)',
-        description='Mismas reglas que la actualización completa, pero solo se envían los campos a cambiar.',
+        description='Mismas reglas que la actualización completa, pero solo se envían los campos a cambiar. '
+                    'Solo el administrador puede asignar o modificar especialidades.',
     ),
     destroy=extend_schema(
         summary='Borrar usuario',
