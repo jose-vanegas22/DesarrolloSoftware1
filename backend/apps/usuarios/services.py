@@ -17,6 +17,13 @@ from django.utils import timezone
 
 from .models import CodigoRecuperacion, Usuario
 
+import logging
+from smtplib import SMTPException
+
+logger = logging.getLogger(__name__) # Sirve para registrar errores en este caso para cuando un correo no se envie
+
+NOMBRES_ROLES = {'administrador': 'Administrador', 'comite': 'Comité científico', 'autor': 'Autor'} # Diccionario para envir el rol en el mensaje de una forma mas presentable
+
 # URL de verificación de reCAPTCHA para el backend. Esta URL se utiliza para enviar la solicitud de verificación del token de reCAPTCHA al servidor de Google y obtener la respuesta correspondiente.
 URL_VERIFICACION = 'https://www.google.com/recaptcha/api/siteverify' 
 
@@ -88,4 +95,27 @@ def restablecer_contrasena(correo, pin, password):
     for token in OutstandingToken.objects.filter(user=usuario):  # Cierra todas las sesiones abiertas
         BlacklistedToken.objects.get_or_create(token=token)
     return True
+
+
+
+
+# Avisa por correo que la cuenta fue creada. Nunca incluye la contraseña.
+# Si el envio falla, solo se registra el error: la cuenta ya quedo creada.
+def enviar_correo_bienvenida(usuario, creado_por_gestor=False):
+    roles = ', '.join(NOMBRES_ROLES[rol] for rol in usuario.roles)
+    mensaje = (
+        f'Hola {usuario.nombres}, tu cuenta en Conecta fue creada.\n\n'
+        f'Roles: {roles}\n'
+        f'Inicia sesión con tu correo en: {settings.FRONTEND_URL}/login\n'
+    )
+    if creado_por_gestor:
+        mensaje += (
+            '\nTu cuenta fue creada por el equipo organizador. Para definir tu propia contraseña, '
+            'en la pantalla de inicio de sesión pulsa "¿Olvidaste tu contraseña?" y sigue los pasos.\n'
+        )
+
+    try:
+        send_mail('Tu cuenta en Conecta fue creada', mensaje, None, [usuario.correo])
+    except (SMTPException, OSError):
+        logger.exception('No se pudo enviar el correo de bienvenida a %s', usuario.correo) # Nos permite atrapar los errores tipicos de enviar correos
 

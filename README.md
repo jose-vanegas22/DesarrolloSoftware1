@@ -79,6 +79,9 @@ Abre `backend/.env` y completa los valores:
   ```powershell
   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
   ```
+- `FRONTEND_URL`: dirección del frontend que aparece en los enlaces de los correos. Si la dejas vacía, usa `http://localhost:5173`.
+
+
 
 Luego aplica las migraciones:
 
