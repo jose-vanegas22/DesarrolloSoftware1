@@ -7,7 +7,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from apps.usuarios.permissions import es_gestor, obtener_rol_activo
-from .models import Articulo, AsignacionRevision, VersionArticulo
+from .models import Articulo, AsignacionRevision, Revision, VersionArticulo
 from .permissions import PermisoArticulos
 from .serializers import (
     ArticuloDetalleSerializer,
@@ -98,6 +98,20 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
         revision = registrar_revision(request, articulo, serializer.validated_data)
         return Response(RevisionSerializer(revision).data, status=status.HTTP_201_CREATED)
 
+
+    @extend_schema(
+        summary='Consultar evaluaciones del artículo',
+        description='Solo con rol activo de autor y únicamente para artículos propios. Devuelve las '
+                    'evaluaciones registradas del artículo sin exponer la identidad de los revisores. '
+                    'Un artículo ajeno o inexistente responde 404.',
+        responses={200: RevisionSerializer(many=True)},
+    )
+    @action(detail=True, methods=['get'], url_path='evaluaciones')
+    def evaluaciones(self, request, pk=None):
+        # get_queryset limita al autor a sus propios artículos, por lo que un artículo ajeno responde 404.
+        articulo = self.get_object()
+        revisiones = Revision.objects.filter(asignacion__articulo=articulo)
+        return Response(RevisionSerializer(revisiones, many=True).data)
 
 
     @extend_schema(summary='Subir PDF inicial',
