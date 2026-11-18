@@ -75,3 +75,35 @@ class VersionArticulo(models.Model):
 
     def __str__(self):
         return f'{self.articulo} - {self.get_tipo_display()}'
+
+
+class AsignacionRevision(models.Model):
+    articulo = models.ForeignKey(Articulo, on_delete=models.PROTECT, related_name='asignaciones_revision')
+    revisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='asignaciones_revision')
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['articulo', 'revisor'], name='revisor_unico_por_articulo'),
+        ]
+
+    def __str__(self):
+        return f'{self.articulo} - {self.revisor}'
+
+
+class Revision(models.Model):
+    class Decision(models.TextChoices):
+        ACEPTAR = 'aceptar', 'Aceptar'
+        RECHAZAR = 'rechazar', 'Rechazar'
+
+    # OneToOne crea una restricción UNIQUE: una asignación solo puede evaluarse una vez.
+    asignacion = models.OneToOneField(AsignacionRevision, on_delete=models.PROTECT, related_name='revision')
+    decision = models.CharField(max_length=10, choices=Decision.choices)
+    comentarios = models.TextField()
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['creado']
+
+    def __str__(self):
+        return f'{self.asignacion} - {self.get_decision_display()}'

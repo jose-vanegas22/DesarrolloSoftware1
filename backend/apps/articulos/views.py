@@ -12,6 +12,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from .serializers import RevisionSerializer
+from .services import registrar_revision
 
 
 
@@ -75,6 +77,21 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
         return articulos
 
 
+
+    @extend_schema(
+        summary='Evaluar artículo',
+        description='Solo el comité asignado, sin autoría propia y dentro del plazo de revisión. '
+        'Una evaluación por asignación. El resultado se calcula al registrar las tres evaluaciones.',
+        request=RevisionSerializer,
+        responses={201: RevisionSerializer},
+    )
+    @action(detail=True, methods=['post'], url_path='evaluacion', serializer_class=RevisionSerializer)
+    def evaluar(self, request, pk=None):
+        articulo = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        revision = registrar_revision(request, articulo, serializer.validated_data)
+        return Response(RevisionSerializer(revision).data, status=status.HTTP_201_CREATED)
 
     @extend_schema(summary='Subir PDF inicial',
                 description='Solo el autor responsable, dentro del plazo de postulación. Solo PDF del tamaño máximo permitido.')

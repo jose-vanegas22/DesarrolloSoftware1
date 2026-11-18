@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import transaction
 from rest_framework import serializers
-from .models import Articulo, Autor, VersionArticulo
+from .models import Articulo, Autor, VersionArticulo, Revision
 from drf_spectacular.utils import extend_schema_field
 
 class CoautorSerializer(serializers.ModelSerializer):
@@ -124,4 +124,12 @@ class ReemplazoPdfSerializer(VersionArticuloSerializer):
             raise serializers.ValidationError('El artículo todavía no tiene un PDF inicial; primero debe subirlo.')
         return attrs
 
+
+
+
+class RevisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Revision
+        fields = ['id', 'decision', 'comentarios', 'creado']
+        read_only_fields = ['id', 'creado']
 
