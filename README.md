@@ -130,16 +130,20 @@ La documentación interactiva de la API está en http://127.0.0.1:8000/api/docs/
 
 ## Pruebas automatizadas del backend
 
-Con las dependencias del backend instaladas, desde `backend/` y con el entorno virtual activado:
+Con las dependencias del backend instaladas, desde `backend/` y con el entorno virtual activado.
+
+### Para Articulos
+
+Ejecutar todas las pruebas:
 
 ```bash
-python manage.py test apps.articulos --settings=config.settings_test --noinput
+python manage.py test apps.articulos --settings=config.settings_test --noinput --verbosity 2
 ```
 
 Para ejecutar solo las pruebas de deshabilitar articulos (SCRUM-26):
 
 ```bash
-python manage.py test apps.articulos.tests.DeshabilitarArticuloTests --settings=config.settings_test --noinput
+python manage.py test apps.articulos.tests.DeshabilitarArticuloTests --settings=config.settings_test --noinput --verbosity 2
 ```
 
 Esta configuracion usa SQLite y almacenamiento de archivos en memoria. Django crea las tablas y los datos de prueba, y descarta la base al terminar. No requiere crear una base en Supabase, completar credenciales ni levantar el backend o el frontend. La clave de firma incluida es ficticia y exclusiva para pruebas.
