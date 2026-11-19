@@ -23,6 +23,9 @@ export default function ArticuloDetallePage() {
   const { state } = useLocation(); // Recibe el mensaje que deja la pantalla de edicion al guardar
   const [mensaje, setMensaje] = useState(state?.mensaje ?? "");
   const esAutor = obtenerRolActivo() === "autor";
+  const esComite = obtenerRolActivo() === "comite";
+  const [actualizandoResultado, setActualizandoResultado] = useState(false);
+  const [errorResultado, setErrorResultado] = useState("");
   const [nuevoArchivo, setNuevoArchivo] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
   const [errorPdf, setErrorPdf] = useState("");
@@ -56,6 +59,20 @@ export default function ArticuloDetallePage() {
     }
 
     setNuevoArchivo(file);
+  };
+
+  const handleActualizarResultado = async () => {
+    if (actualizandoResultado) return;
+    setActualizandoResultado(true);
+    setErrorResultado("");
+    try {
+      const { data } = await getArticulo(id);
+      setArticulo(data);
+    } catch {
+      setErrorResultado("No se pudo actualizar el resultado. Se conserva la última información consultada.");
+    } finally {
+      setActualizandoResultado(false);
+    }
   };
 
   const handleReemplazarPdf = async (event) => {
@@ -140,18 +157,48 @@ export default function ArticuloDetallePage() {
       <div className="detalle-columnas">
         <div className="detalle-columna">
           
-          {}
-          <div className="detalle-tarjeta">
-            <h2>Estado del artículo</h2>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
-              <span className="detalle-etiqueta" style={{ fontSize: "1rem", padding: "0.4rem 0.8rem" }}>
-                {articulo.estado_nombre || "Estado no disponible"}
-              </span>
+          {esComite ? (
+            <section className="detalle-tarjeta" aria-labelledby="resultado-revision-titulo" aria-busy={actualizandoResultado}>
+              <h2 id="resultado-revision-titulo">Resultado de la evaluación</h2>
+              <div className="detalle-resultado" role="status">
+                <span className={`detalle-etiqueta detalle-resultado-etiqueta${
+                  articulo.estado === "aceptado" ? " detalle-resultado-aceptado" :
+                    articulo.estado === "rechazado" ? " detalle-resultado-rechazado" : ""
+                }`}>
+                  {articulo.estado === "aceptado" ? "Aceptado" :
+                    articulo.estado === "rechazado" ? "Rechazado" : "Resultado pendiente"}
+                </span>
+                <p className="detalle-texto">
+                  {articulo.estado === "aceptado"
+                    ? "El artículo fue aceptado con al menos dos votos a favor entre las tres evaluaciones."
+                    : articulo.estado === "rechazado"
+                      ? "El artículo fue rechazado con al menos dos votos en contra entre las tres evaluaciones."
+                      : "El resultado se calcula automáticamente cuando se registran las tres evaluaciones. Aunque dos revisores coincidan, se espera la tercera evaluación."}
+                </p>
+              </div>
+              {errorResultado && <p className="mensaje-error" role="alert">{errorResultado}</p>}
+              <button
+                className="boton boton-secundario detalle-resultado-actualizar"
+                type="button"
+                onClick={handleActualizarResultado}
+                disabled={actualizandoResultado}
+              >
+                {actualizandoResultado ? "Actualizando..." : "Actualizar resultado"}
+              </button>
+            </section>
+          ) : (
+            <div className="detalle-tarjeta">
+              <h2>Estado del artículo</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
+                <span className="detalle-etiqueta" style={{ fontSize: "1rem", padding: "0.4rem 0.8rem" }}>
+                  {articulo.estado_nombre || "Estado no disponible"}
+                </span>
+              </div>
+              <p className="detalle-texto" style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#555" }}>
+                Etapa actual en la que se encuentra tu postulación.
+              </p>
             </div>
-            <p className="detalle-texto" style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#555" }}>
-              Etapa actual en la que se encuentra tu postulación.
-            </p>
-          </div>
+          )}
 
           <div className="detalle-tarjeta">
             <h2>Información</h2>
