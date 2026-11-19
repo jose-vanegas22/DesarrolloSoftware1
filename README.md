@@ -128,6 +128,24 @@ python manage.py createsuperuser
 La documentación interactiva de la API está en http://127.0.0.1:8000/api/docs/ (Swagger).
 
 
+## Pruebas automatizadas del backend
+
+Con las dependencias del backend instaladas, desde `backend/` y con el entorno virtual activado:
+
+```bash
+python manage.py test apps.articulos --settings=config.settings_test --noinput
+```
+
+Para ejecutar solo las pruebas de deshabilitar articulos (SCRUM-26):
+
+```bash
+python manage.py test apps.articulos.tests.DeshabilitarArticuloTests --settings=config.settings_test --noinput
+```
+
+Esta configuracion usa SQLite y almacenamiento de archivos en memoria. Django crea las tablas y los datos de prueba, y descarta la base al terminar. No requiere crear una base en Supabase, completar credenciales ni levantar el backend o el frontend. La clave de firma incluida es ficticia y exclusiva para pruebas.
+
+Usa siempre `--settings=config.settings_test` para estas pruebas aisladas. Esta configuracion no es para `runserver` ni comprueba los bloqueos concurrentes de PostgreSQL. Las pruebas de navegador se ejecutan por separado como se explica a continuacion.
+
 ## Pruebas end to end
 
 Las pruebas están en `e2e/` y usan Playwright. La primera vez:
