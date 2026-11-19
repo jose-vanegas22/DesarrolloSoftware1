@@ -142,8 +142,8 @@ export default function ArticuloDetallePage() {
 
       <div className="detalle-columnas">
         <div className="detalle-columna">
-          
-          {}
+
+          { }
           <div className="detalle-tarjeta">
             <h2>Estado del artículo</h2>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
@@ -207,7 +207,9 @@ export default function ArticuloDetallePage() {
               ))}
             </ul>
           </div>
+          {esAutor && <ListaEvaluaciones articuloId={articulo.id} />}
         </div>
+
 
         <div className="detalle-tarjeta">
           <h2>Artículo en PDF</h2>
@@ -249,7 +251,6 @@ export default function ArticuloDetallePage() {
         </div>
       </div>
 
-      {esAutor && <ListaEvaluaciones articuloId={articulo.id} />}
       {esComite && (
         <FormularioEvaluacion
           key={articulo.id}
