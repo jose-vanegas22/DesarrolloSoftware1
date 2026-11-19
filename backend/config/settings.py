@@ -214,5 +214,7 @@ LOGIN_MINUTOS_BLOQUEO = 15
 
 # Recuperacion de contraseña
 CODIGO_RECUPERACION_MINUTOS = 15
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Conecta <no-responder@conecta.local>')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL') or 'Conecta <no-responder@conecta.local>'
 CODIGO_RECUPERACION_MAX_INTENTOS = 5
+
+FRONTEND_URL = os.getenv('FRONTEND_URL') or 'http://localhost:5173'  # Para los enlaces de los correos

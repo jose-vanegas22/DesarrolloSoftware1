@@ -16,7 +16,7 @@ from .serializers import (
     RestablecerContrasenaSerializer,
     UsuarioSerializer,
 )
-from .services import enviar_codigo_recuperacion, restablecer_contrasena
+from .services import enviar_codigo_recuperacion, enviar_correo_bienvenida, restablecer_contrasena
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -79,6 +79,11 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             return DatosPersonalesSerializer
         return UsuarioSerializer
 
+    # Al crear un usuario desde administracion, se le avisa por correo
+    def perform_create(self, serializer):
+        usuario = serializer.save()
+        enviar_correo_bienvenida(usuario, creado_por_gestor=True)
+
     # Para que no se puede borrar el unico administrador del sistema
     def perform_destroy(self, instance):
         if instance.es_administrador:
@@ -139,7 +144,8 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def registro(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        usuario = serializer.save()
+        enviar_correo_bienvenida(usuario)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
