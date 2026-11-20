@@ -1,8 +1,6 @@
 from django.conf import settings
 from django.db import models
 import uuid
-from django.conf import settings
-from django.db import models
 
 
 class Articulo(models.Model):
@@ -58,6 +56,10 @@ def ruta_pdf(version, nombre):
     return f'{version.articulo_id}/{uuid.uuid4().hex}.pdf'
 
 
+# Maximo de articulos que puede revisar un mismo miembro del comite.
+MAX_ARTICULOS_POR_REVISOR = 3
+
+
 # Cada PDF entregado de un articulo. Se guardan todas para conservar el historial.
 class VersionArticulo(models.Model):
     class Tipo(models.TextChoices):
@@ -75,3 +77,36 @@ class VersionArticulo(models.Model):
 
     def __str__(self):
         return f'{self.articulo} - {self.get_tipo_display()}'
+
+
+class AsignacionRevision(models.Model):
+    articulo = models.ForeignKey(Articulo, on_delete=models.PROTECT, related_name='asignaciones_revision')
+    revisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='asignaciones_revision')
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['articulo', 'revisor'], name='revisor_unico_por_articulo'),
+        ]
+
+    def __str__(self):
+        return f'{self.articulo} - {self.revisor}'
+
+
+class Revision(models.Model):
+    class Decision(models.TextChoices):
+        ACEPTAR = 'aceptar', 'Aceptar'
+        RECHAZAR = 'rechazar', 'Rechazar'
+
+    # OneToOne crea una restricción UNIQUE: una asignación solo puede evaluarse una vez.
+    asignacion = models.OneToOneField(AsignacionRevision, on_delete=models.PROTECT, related_name='revision')
+    version = models.ForeignKey(VersionArticulo, on_delete=models.PROTECT, related_name='revisiones', null=True)  # PDF que se evaluo
+    decision = models.CharField(max_length=10, choices=Decision.choices)
+    comentarios = models.TextField()
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['creado']
+
+    def __str__(self):
+        return f'{self.asignacion} - {self.get_decision_display()}'
