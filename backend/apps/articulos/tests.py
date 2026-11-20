@@ -429,3 +429,34 @@ class DeshabilitarArticuloTests(APITestCase):
         self.iniciar_sesion(self.comite, 'comite')
         respuesta = self.client.post('/api/articulos/0/deshabilitar/')
         self.assertEqual(respuesta.status_code, status.HTTP_404_NOT_FOUND)
+
+
+
+class FiltroConferenciaTests(APITestCase):
+    def setUp(self):
+        comite = Usuario.objects.create_user('comite@b.co', 'ClaveSegura123', nombres='C', apellidos='O', es_comite=True)
+        autor = Usuario.objects.create_user('autor@b.co', 'ClaveSegura123', nombres='A', apellidos='U', es_autor=True)
+        self.evento1 = Evento.objects.create(nombre='Uno', fecha_inicio='2027-03-01', fecha_fin='2027-03-05')
+        evento2 = Evento.objects.create(nombre='Dos', fecha_inicio='2027-04-01', fecha_fin='2027-04-05')
+        datos = {'autor_responsable': autor, 'resumen': 'R', 'palabras_clave': 'P', 'linea_tematica': 'sistemas_inteligentes'}
+        Articulo.objects.create(evento=self.evento1, titulo='IA uno', **datos)
+        Articulo.objects.create(evento=self.evento1, titulo='Redes', estado=Articulo.Estado.EN_REVISION, **datos)
+        Articulo.objects.create(evento=evento2, titulo='IA dos', **datos)
+        token = RefreshToken.for_user(comite)
+        token['rol_activo'] = 'comite'
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token.access_token}')
+
+    def titulos(self, filtros):
+        respuesta = self.client.get('/api/articulos/', filtros)
+        self.assertEqual(respuesta.status_code, status.HTTP_200_OK)
+        return sorted(articulo['titulo'] for articulo in respuesta.data)
+
+    def test_filtra_por_conferencia(self):
+        self.assertEqual(self.titulos({'evento': self.evento1.id}), ['IA uno', 'Redes'])
+
+    def test_combina_con_titulo_y_estado(self):
+        self.assertEqual(self.titulos({'evento': self.evento1.id, 'buscar': 'IA'}), ['IA uno'])
+        self.assertEqual(self.titulos({'evento': self.evento1.id, 'estado': 'en_revision'}), ['Redes'])
+
+    def test_valor_invalido_no_falla(self):
+        self.assertEqual(len(self.titulos({'evento': 'abc'})), 3)

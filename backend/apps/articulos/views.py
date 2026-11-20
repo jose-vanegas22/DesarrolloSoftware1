@@ -33,6 +33,7 @@ from rest_framework.exceptions import ValidationError
             OpenApiParameter('buscar', str, description='Busca por título'),
             OpenApiParameter('autor', str, description='Busca por nombre de cualquier autor. Solo administrador y comité'),
             OpenApiParameter('estado', str, description='Estado del artículo'),
+            OpenApiParameter('evento', int, description='Id de la conferencia'),
         ],
     ),
 
@@ -75,6 +76,8 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
         buscar = self.request.query_params.get('buscar')
         autor = self.request.query_params.get('autor')
         estado = self.request.query_params.get('estado')
+        evento = self.request.query_params.get('evento')
+
 
         if buscar:
             articulos = articulos.filter(titulo__icontains=buscar)
@@ -82,6 +85,8 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
             articulos = articulos.filter(autores__nombre__icontains=autor).distinct()
         if estado:
             articulos = articulos.filter(estado=estado)
+        if evento and evento.isdigit():  # Solo numeros, para que un valor raro no cause error
+            articulos = articulos.filter(evento_id=evento)
         return articulos
 
     @extend_schema(

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { getArticulos } from "../../api/articulosApi";
+import { getEventos } from "../../api/eventosApi";
 import { obtenerRolActivo } from "../../api/authApi";
 import CampoFormulario from "../../components/CampoFormulario";
 import "./ArticulosPage.css";
 import { Eye, Filter, Plus, UserCheck } from "lucide-react";
 
-const FILTROS_INICIALES = { buscar: "", autor: "", estado: "" };
+const FILTROS_INICIALES = { buscar: "", autor: "", estado: "", evento: "" };
+
 
 const ESTADOS = [
   { valor: "postulado", texto: "Postulado" },
@@ -21,6 +23,7 @@ export default function ArticulosPage() {
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [conferencias, setConferencias] = useState([]);
   const esAutor = obtenerRolActivo() === "autor";
   const esComite = obtenerRolActivo() === "comite";
 
@@ -30,6 +33,14 @@ export default function ArticulosPage() {
       .catch(() => setError("No se pudieron cargar los artículos."))
       .finally(() => setCargando(false));
   }, [filtros]);
+
+  // Carga las conferencias una sola vez para el filtro
+  useEffect(() => {
+    getEventos()
+      .then(({ data }) => setConferencias(data))
+      .catch(() => setConferencias([]));
+  }, []);
+
 
   const handleChange = (e) => {
     setFormulario({ ...formulario, [e.target.name]: e.target.value });
@@ -68,6 +79,17 @@ export default function ArticulosPage() {
         {!esAutor && (
           <CampoFormulario id="filtro-autor" name="autor" etiqueta="Autor" placeholder="Nombre..." value={formulario.autor} onChange={handleChange} />
         )}
+
+        <div className="campo">
+          <label htmlFor="filtro-evento">Conferencia</label>
+          <select id="filtro-evento" name="evento" value={formulario.evento} onChange={handleChange}>
+            <option value="">Todas</option>
+            {conferencias.map((conferencia) => (
+              <option key={conferencia.id} value={conferencia.id}>{conferencia.nombre}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="campo">
           <label htmlFor="filtro-estado">Estado</label>
           <select id="filtro-estado" name="estado" value={formulario.estado} onChange={handleChange}>
