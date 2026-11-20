@@ -1,13 +1,73 @@
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
-from .models import Articulo, Autor, VersionArticulo
+from apps.eventos.models import FechaLimite
+from apps.usuarios.models import Usuario
+from .models import MAX_ARTICULOS_POR_REVISOR, Articulo, AsignacionRevision, Autor, VersionArticulo, Revision
+from .services import validar_revisor, validar_plazo_revision
+from rest_framework.exceptions import APIException
 from drf_spectacular.utils import extend_schema_field
 
 class CoautorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Autor
         fields = ['id', 'nombre', 'afiliacion', 'correo']
+
+
+class AsignacionRevisionSerializer(serializers.ModelSerializer):
+    revisor_nombre = serializers.CharField(source='revisor.nombres', read_only=True)
+    revisor_apellidos = serializers.CharField(source='revisor.apellidos', read_only=True)
+    revisor_correo = serializers.EmailField(source='revisor.correo', read_only=True)
+
+    class Meta:
+        model = AsignacionRevision
+        fields = ['id', 'revisor', 'revisor_nombre', 'revisor_apellidos', 'revisor_correo', 'creado']
+        read_only_fields = fields
+
+
+class AsignarRevisoresSerializer(serializers.Serializer):
+    revisores = serializers.PrimaryKeyRelatedField(queryset=Usuario.objects.all(), many=True)
+
+    def validate_revisores(self, revisores):
+        articulo = self.context['articulo']
+
+        fecha_postulacion = articulo.evento.fechas_limite.filter(etapa=FechaLimite.Etapa.POSTULACION).first()
+        if fecha_postulacion is None:
+            raise serializers.ValidationError('El evento no tiene configurada la fecha limite de postulacion.')
+        if timezone.now() <= fecha_postulacion.fecha:
+            raise serializers.ValidationError('La postulacion aun no ha terminado.')
+
+        if len(revisores) != 3:
+            raise serializers.ValidationError('Se deben asignar exactamente tres revisores.')
+
+        ids = [revisor.id for revisor in revisores]
+        if len(set(ids)) != 3:
+            raise serializers.ValidationError('Los tres revisores deben ser diferentes.')
+
+        correos_autores = {articulo.autor_responsable.correo.lower().strip()}
+        correos_autores.update(autor.correo.lower().strip() for autor in articulo.autores.all())
+
+        for revisor in revisores:
+            if not revisor.activo:
+                raise serializers.ValidationError(f'{revisor} está desactivado y no puede ser revisor.')
+
+            if not revisor.es_comite:
+                raise serializers.ValidationError(
+                    f'{revisor} no pertenece al comite cientifico.'
+                )
+            if revisor.id == articulo.autor_responsable_id or revisor.correo.lower().strip() in correos_autores:
+                raise serializers.ValidationError(
+                    f'{revisor} es autor o coautor del articulo y no puede revisarlo.'
+                )
+        
+            asignados = AsignacionRevision.objects.filter(revisor=revisor).exclude(articulo=articulo).count()
+            if asignados >= MAX_ARTICULOS_POR_REVISOR:
+                raise serializers.ValidationError(
+                    f'{revisor} ya tiene el maximo de {MAX_ARTICULOS_POR_REVISOR} articulos asignados.'
+                )
+
+        return revisores
 
 
 class ArticuloSerializer(serializers.ModelSerializer):
@@ -64,10 +124,30 @@ class ArticuloDetalleSerializer(ArticuloSerializer):
     autores = serializers.SerializerMethodField()
     fecha_pdf = serializers.SerializerMethodField()
     postulacion_abierta = serializers.BooleanField(source='evento.postulacion_abierta', read_only=True)
+    pdf_url = serializers.SerializerMethodField()
+    evaluacion = serializers.SerializerMethodField()
 
 
     class Meta(ArticuloSerializer.Meta):
-        fields = ArticuloSerializer.Meta.fields + ['autores', 'fecha_pdf', 'postulacion_abierta']
+        fields = ArticuloSerializer.Meta.fields + ['autores', 'fecha_pdf', 'postulacion_abierta', 'pdf_url', 'evaluacion']
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_pdf_url(self, articulo):
+        version = articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).order_by('-creado', '-pk').first()
+        return version.archivo.url if version and version.archivo else None
+
+    @extend_schema_field(serializers.DictField())
+    def get_evaluacion(self, articulo):
+        # Solo se expone la evaluación propia; no las decisiones de otros revisores.
+        try:
+            asignacion = validar_revisor(self.context['request'], articulo)
+            revision = Revision.objects.filter(asignacion=asignacion).first()
+            if revision:
+                return {'puede_evaluar': False, 'motivo': 'Ya registraste tu evaluación.', 'revision': RevisionSerializer(revision).data}
+            validar_plazo_revision(articulo)
+        except APIException as error:
+            return {'puede_evaluar': False, 'motivo': str(error.detail), 'revision': None}
+        return {'puede_evaluar': True, 'motivo': '', 'revision': None}
 
     @extend_schema_field(CoautorSerializer(many=True))
     def get_autores(self, articulo):
@@ -114,6 +194,13 @@ class VersionArticuloSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class RevisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Revision
+        fields = ['id', 'decision', 'comentarios', 'creado']
+        read_only_fields = ['id', 'creado']
+
+
 # Reemplazo del PDF inicial: misma validacion del archivo, pero exige que ya exista un PDF
 class ReemplazoPdfSerializer(VersionArticuloSerializer):
     def validate(self, attrs):
@@ -123,5 +210,4 @@ class ReemplazoPdfSerializer(VersionArticuloSerializer):
         if not articulo.versiones.filter(tipo=VersionArticulo.Tipo.INICIAL).exists():
             raise serializers.ValidationError('El artículo todavía no tiene un PDF inicial; primero debe subirlo.')
         return attrs
-
 

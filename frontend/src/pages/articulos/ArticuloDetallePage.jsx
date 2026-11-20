@@ -1,9 +1,12 @@
-import { ArrowLeft, Pencil, X } from "lucide-react";
+import { ArrowLeft, Ban, Pencil, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { getArticulo, reemplazarPdfArticulo } from "../../api/articulosApi";
 import { obtenerRolActivo } from "../../api/authApi";
 import QuitarCoautorModal from "./components/QuitarCoautorModal";
+import DeshabilitarArticuloModal from "./components/DeshabilitarArticuloModal";
+import FormularioEvaluacion from "./components/FormularioEvaluacion";
+import ListaEvaluaciones from "./components/ListaEvaluaciones";
 import "./ArticuloDetallePage.css";
 
 const formatearFecha = (fecha) =>
@@ -23,6 +26,12 @@ export default function ArticuloDetallePage() {
   const { state } = useLocation(); // Recibe el mensaje que deja la pantalla de edicion al guardar
   const [mensaje, setMensaje] = useState(state?.mensaje ?? "");
   const esAutor = obtenerRolActivo() === "autor";
+  const esGestor = ["administrador", "comite"].includes(obtenerRolActivo());
+  const [confirmandoDeshabilitar, setConfirmandoDeshabilitar] = useState(false);
+  const navigate = useNavigate();
+  const esComite = obtenerRolActivo() === "comite";
+  const [actualizandoResultado, setActualizandoResultado] = useState(false);
+  const [errorResultado, setErrorResultado] = useState("");
   const [nuevoArchivo, setNuevoArchivo] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
   const [errorPdf, setErrorPdf] = useState("");
@@ -39,6 +48,23 @@ export default function ArticuloDetallePage() {
         )
       );
   }, [id]);
+  
+
+  // Vuelve a consultar el articulo para ver si otro revisor completo las evaluaciones
+  const handleActualizarResultado = async () => {
+    setActualizandoResultado(true);
+    setErrorResultado("");
+    try {
+      const { data } = await getArticulo(id);
+      setArticulo(data);
+    } catch {
+      setErrorResultado("No se pudo actualizar el resultado. Intenta de nuevo.");
+    } finally {
+      setActualizandoResultado(false);
+    }
+  };
+
+
 
   const handleCambioArchivo = (event) => {
     const file = event.target.files?.[0];
@@ -133,25 +159,57 @@ export default function ArticuloDetallePage() {
             Editar
           </Link>
         )}
+        {esGestor && (
+          <button className="boton boton-secundario detalle-editar" type="button" onClick={() => setConfirmandoDeshabilitar(true)}>
+            <Ban size={16} aria-hidden="true" />
+            Deshabilitar
+          </button>
+        )}
       </div>
 
       {mensaje && <p className="mensaje-exito">{mensaje}</p>}
 
       <div className="detalle-columnas">
         <div className="detalle-columna">
-          
-          {}
-          <div className="detalle-tarjeta">
-            <h2>Estado del artículo</h2>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
-              <span className="detalle-etiqueta" style={{ fontSize: "1rem", padding: "0.4rem 0.8rem" }}>
-                {articulo.estado_nombre || "Estado no disponible"}
-              </span>
+
+          {esComite ? (
+            <section className="detalle-tarjeta">
+              <h2>Resultado de la evaluación</h2>
+              <div className="detalle-resultado">
+                <span className={`detalle-etiqueta detalle-resultado-etiqueta${
+                  articulo.estado === "aceptado" ? " detalle-resultado-aceptado" :
+                    articulo.estado === "rechazado" ? " detalle-resultado-rechazado" : ""
+                }`}>
+                  {articulo.estado === "aceptado" ? "Aceptado" :
+                    articulo.estado === "rechazado" ? "Rechazado" : "Resultado pendiente"}
+                </span>
+                <p className="detalle-texto">
+                  {articulo.estado === "aceptado"
+                    ? "El artículo fue aceptado con al menos dos votos a favor entre las tres evaluaciones."
+                    : articulo.estado === "rechazado"
+                      ? "El artículo fue rechazado con al menos dos votos en contra entre las tres evaluaciones."
+                      : "El resultado se calcula automáticamente cuando se registran las tres evaluaciones."}
+                </p>
+              </div>
+              {errorResultado && <p className="mensaje-error">{errorResultado}</p>}
+              <button className="boton boton-secundario detalle-resultado-actualizar" type="button" onClick={handleActualizarResultado} disabled={actualizandoResultado}>
+                {actualizandoResultado ? "Actualizando..." : "Actualizar resultado"}
+              </button>
+            </section>
+          ) : (
+            <div className="detalle-tarjeta">
+              <h2>Estado del artículo</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
+                <span className="detalle-etiqueta" style={{ fontSize: "1rem", padding: "0.4rem 0.8rem" }}>
+                  {articulo.estado_nombre || "Estado no disponible"}
+                </span>
+              </div>
+              <p className="detalle-texto" style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#555" }}>
+                Etapa actual en la que se encuentra tu postulación.
+              </p>
             </div>
-            <p className="detalle-texto" style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#555" }}>
-              Etapa actual en la que se encuentra tu postulación.
-            </p>
-          </div>
+          )}
+
 
           <div className="detalle-tarjeta">
             <h2>Información</h2>
@@ -204,7 +262,9 @@ export default function ArticuloDetallePage() {
               ))}
             </ul>
           </div>
+          {esAutor && <ListaEvaluaciones articuloId={articulo.id} />}
         </div>
+
 
         <div className="detalle-tarjeta">
           <h2>Artículo en PDF</h2>
@@ -212,6 +272,12 @@ export default function ArticuloDetallePage() {
             <p className="detalle-texto">Entregado el {formatearFecha(articulo.fecha_pdf)}</p>
           ) : (
             <p className="detalle-texto">Todavía no se ha entregado el PDF.</p>
+          )}
+
+          {articulo.pdf_url && (
+            <a className="boton boton-secundario" href={articulo.pdf_url} target="_blank" rel="noopener noreferrer">
+              Abrir PDF del artículo
+            </a>
           )}
 
           {esAutor && articulo.postulacion_abierta ? (
@@ -240,12 +306,33 @@ export default function ArticuloDetallePage() {
         </div>
       </div>
 
+      {esComite && (
+        <FormularioEvaluacion
+          key={articulo.id}
+          articuloId={articulo.id}
+          evaluacion={articulo.evaluacion}
+          onEvaluado={() => {
+            setMensaje("Evaluación registrada correctamente.");
+            getArticulo(id)
+              .then(({ data }) => setArticulo(data))
+              .catch(() => setMensaje("Evaluación registrada. Recarga la página para actualizar el estado del artículo."));
+          }}
+        />
+      )}
+
       {coautorQuitado && (
         <QuitarCoautorModal
           articuloId={articulo.id}
           coautor={coautorQuitado}
           onCerrar={() => setCoautorQuitado(null)}
           onQuitado={handleQuitado}
+        />
+      )}
+      {confirmandoDeshabilitar && (
+        <DeshabilitarArticuloModal
+          articulo={articulo}
+          onCerrar={() => setConfirmandoDeshabilitar(false)}
+          onDeshabilitado={() => navigate("/articulos", { replace: true })}
         />
       )}
     </section>

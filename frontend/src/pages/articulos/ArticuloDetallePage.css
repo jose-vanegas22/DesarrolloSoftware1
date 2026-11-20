@@ -4,6 +4,41 @@
   gap: 20px;
 }
 
+.evaluacion-formulario,
+.evaluacion-formulario fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.evaluacion-tarjeta select,
+.evaluacion-tarjeta textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--color-texto);
+  background: var(--color-fondo);
+  box-shadow: var(--sombra-hundida);
+}
+
+.evaluacion-tarjeta textarea {
+  resize: vertical;
+}
+
+.evaluacion-tarjeta select:focus,
+.evaluacion-tarjeta textarea:focus {
+  outline: 2px solid var(--color-principal);
+  outline-offset: 1px;
+}
+
 .detalle-encabezado {
   display: flex;
   align-items: flex-start;
@@ -197,6 +232,38 @@
   font-size: 0.72rem;
   font-weight: 700;
   background-color: #efebe3;
+}
+
+.detalle-resultado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.detalle-resultado-etiqueta {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.detalle-resultado-aceptado {
+  color: var(--color-exito);
+  border-color: var(--color-exito);
+}
+
+.detalle-resultado-rechazado {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.detalle-resultado-actualizar {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.detalle-resultado-actualizar:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 
 .detalle-reemplazo {
