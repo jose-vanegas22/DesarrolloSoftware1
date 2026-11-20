@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.eventos.models import Evento, FechaLimite
 from apps.usuarios.models import Usuario
-from .models import Articulo, Autor
+from .models import Articulo, Autor, VersionArticulo
 
 
 # HU-13 (SCRUM-24): el autor modifica los datos de su articulo durante las etapas permitidas.
@@ -172,3 +172,131 @@ class EditarArticuloTests(APITestCase):
         self.assertIn('titulo', respuesta.data)
         self.assertIn('linea_tematica', respuesta.data)
         self.assertSinCambios(self.articulo)
+
+
+# HU-15 (SCRUM-26): endpoint, permisos e irreversibilidad (SCRUM-423, SCRUM-424, SCRUM-425),
+# ausencia en consultas y detalle (SCRUM-429), y rechazo de autores (SCRUM-430).
+class DeshabilitarArticuloTests(APITestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.autor = Usuario.objects.create_user('autor@prueba.com', 'clave12345', es_autor=True)
+        cls.comite = Usuario.objects.create_user('comite@prueba.com', 'clave12345', es_comite=True)
+        cls.administrador = Usuario.objects.create_user('admin@prueba.com', 'clave12345', es_administrador=True)
+        cls.autor_y_comite = Usuario.objects.create_user('ambos@prueba.com', 'clave12345', es_autor=True, es_comite=True)
+        hoy = timezone.localdate()
+        cls.evento = Evento.objects.create(nombre='Conferencia de prueba', fecha_inicio=hoy, fecha_fin=hoy)
+        FechaLimite.objects.create(evento=cls.evento, etapa=FechaLimite.Etapa.POSTULACION, fecha=timezone.now() + timedelta(days=1))
+
+    def setUp(self):
+        datos = {
+            'evento': self.evento,
+            'autor_responsable': self.autor,
+            'resumen': 'Resumen de prueba',
+            'palabras_clave': 'prueba',
+            'linea_tematica': Articulo.LineaTematica.SISTEMAS_SOFTWARE,
+        }
+        self.articulo = Articulo.objects.create(titulo='Articulo para retirar', **datos)
+        self.otro_articulo = Articulo.objects.create(titulo='Articulo que sigue visible', **datos)
+        self.autor_articulo = Autor.objects.create(
+            articulo=self.articulo, nombre='Autora', afiliacion='Univalle', correo=self.autor.correo,
+        )
+        # Una referencia basta para verificar conservacion; no sube archivos a Supabase.
+        self.version = VersionArticulo.objects.create(
+            articulo=self.articulo, tipo=VersionArticulo.Tipo.INICIAL, archivo='pruebas/inicial.pdf',
+        )
+        self.detalle = f'/api/articulos/{self.articulo.id}/'
+        self.endpoint = f'{self.detalle}deshabilitar/'
+
+    def iniciar_sesion(self, usuario, rol):
+        refresh = RefreshToken.for_user(usuario)
+        refresh['rol_activo'] = rol
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+    def deshabilitar_como_comite(self):
+        self.iniciar_sesion(self.comite, 'comite')
+        respuesta = self.client.post(self.endpoint)
+        self.assertEqual(respuesta.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_comite_deshabilita_sin_borrar_datos_asociados(self):
+        self.deshabilitar_como_comite()
+        self.articulo.refresh_from_db()
+        self.assertFalse(self.articulo.activo)
+        self.assertEqual(self.articulo.estado, Articulo.Estado.POSTULADO)
+        self.assertTrue(Autor.objects.filter(pk=self.autor_articulo.pk).exists())
+        self.assertTrue(VersionArticulo.objects.filter(pk=self.version.pk).exists())
+        self.otro_articulo.refresh_from_db()
+        self.assertTrue(self.otro_articulo.activo)
+
+    def test_administrador_puede_deshabilitar(self):
+        self.iniciar_sesion(self.administrador, 'administrador')
+        respuesta = self.client.post(self.endpoint)
+        self.assertEqual(respuesta.status_code, status.HTTP_204_NO_CONTENT)
+        self.articulo.refresh_from_db()
+        self.assertFalse(self.articulo.activo)
+
+    def test_autor_recibe_403_incluso_si_tiene_otro_rol(self):
+        for usuario in (self.autor, self.autor_y_comite):
+            with self.subTest(usuario=usuario.correo):
+                self.iniciar_sesion(usuario, 'autor')
+                respuesta = self.client.post(self.endpoint)
+                self.assertEqual(respuesta.status_code, status.HTTP_403_FORBIDDEN)
+                self.articulo.refresh_from_db()
+                self.assertTrue(self.articulo.activo)
+
+    def test_usuario_multirrol_puede_deshabilitar_con_rol_comite(self):
+        self.iniciar_sesion(self.autor_y_comite, 'comite')
+        respuesta = self.client.post(self.endpoint)
+        self.assertEqual(respuesta.status_code, status.HTTP_204_NO_CONTENT)
+        self.articulo.refresh_from_db()
+        self.assertFalse(self.articulo.activo)
+
+    def test_sin_sesion_recibe_401(self):
+        respuesta = self.client.post(self.endpoint)
+        self.assertEqual(respuesta.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.articulo.refresh_from_db()
+        self.assertTrue(self.articulo.activo)
+
+    def test_sin_rol_activo_recibe_403(self):
+        self.iniciar_sesion(self.autor_y_comite, None)
+        respuesta = self.client.post(self.endpoint)
+        self.assertEqual(respuesta.status_code, status.HTTP_403_FORBIDDEN)
+        self.articulo.refresh_from_db()
+        self.assertTrue(self.articulo.activo)
+
+    def test_deshabilitado_no_aparece_en_consultas_ni_detalle_para_ningun_rol(self):
+        self.deshabilitar_como_comite()
+        for usuario, rol in ((self.autor, 'autor'), (self.comite, 'comite'), (self.administrador, 'administrador')):
+            with self.subTest(rol=rol):
+                self.iniciar_sesion(usuario, rol)
+                respuesta = self.client.get('/api/articulos/')
+                self.assertEqual(respuesta.status_code, status.HTTP_200_OK)
+                self.assertEqual([articulo['id'] for articulo in respuesta.data], [self.otro_articulo.id])
+                filtrada = self.client.get('/api/articulos/', {'buscar': self.articulo.titulo})
+                self.assertEqual(filtrada.status_code, status.HTTP_200_OK)
+                self.assertEqual(filtrada.data, [])
+                detalle = self.client.get(self.detalle)
+                self.assertEqual(detalle.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_no_se_puede_reactivar_mediante_edicion(self):
+        self.deshabilitar_como_comite()
+        for usuario, rol in ((self.autor, 'autor'), (self.comite, 'comite'), (self.administrador, 'administrador')):
+            with self.subTest(rol=rol):
+                self.iniciar_sesion(usuario, rol)
+                respuesta = self.client.patch(self.detalle, {'activo': True}, format='json')
+                esperado = status.HTTP_404_NOT_FOUND if rol == 'autor' else status.HTTP_403_FORBIDDEN
+                self.assertEqual(respuesta.status_code, esperado)
+                self.articulo.refresh_from_db()
+                self.assertFalse(self.articulo.activo)
+
+    def test_repetir_accion_no_reactiva_el_articulo(self):
+        self.deshabilitar_como_comite()
+        respuesta = self.client.post(self.endpoint, {'activo': True}, format='json')
+        self.assertEqual(respuesta.status_code, status.HTTP_404_NOT_FOUND)
+        self.articulo.refresh_from_db()
+        self.assertFalse(self.articulo.activo)
+
+    def test_articulo_inexistente_devuelve_404(self):
+        self.iniciar_sesion(self.comite, 'comite')
+        respuesta = self.client.post('/api/articulos/0/deshabilitar/')
+        self.assertEqual(respuesta.status_code, status.HTTP_404_NOT_FOUND)

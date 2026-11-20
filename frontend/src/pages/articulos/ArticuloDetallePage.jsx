@@ -1,9 +1,10 @@
-import { ArrowLeft, Pencil, X } from "lucide-react";
+import { ArrowLeft, Ban, Pencil, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { getArticulo, reemplazarPdfArticulo } from "../../api/articulosApi";
 import { obtenerRolActivo } from "../../api/authApi";
 import QuitarCoautorModal from "./components/QuitarCoautorModal";
+import DeshabilitarArticuloModal from "./components/DeshabilitarArticuloModal";
 import "./ArticuloDetallePage.css";
 
 const formatearFecha = (fecha) =>
@@ -23,6 +24,9 @@ export default function ArticuloDetallePage() {
   const { state } = useLocation(); // Recibe el mensaje que deja la pantalla de edicion al guardar
   const [mensaje, setMensaje] = useState(state?.mensaje ?? "");
   const esAutor = obtenerRolActivo() === "autor";
+  const esGestor = ["administrador", "comite"].includes(obtenerRolActivo());
+  const [confirmandoDeshabilitar, setConfirmandoDeshabilitar] = useState(false);
+  const navigate = useNavigate();
   const [nuevoArchivo, setNuevoArchivo] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
   const [errorPdf, setErrorPdf] = useState("");
@@ -133,14 +137,20 @@ export default function ArticuloDetallePage() {
             Editar
           </Link>
         )}
+        {esGestor && (
+          <button className="boton boton-secundario detalle-editar" type="button" onClick={() => setConfirmandoDeshabilitar(true)}>
+            <Ban size={16} aria-hidden="true" />
+            Deshabilitar
+          </button>
+        )}
       </div>
 
       {mensaje && <p className="mensaje-exito">{mensaje}</p>}
 
       <div className="detalle-columnas">
         <div className="detalle-columna">
-          
-          {}
+
+          { }
           <div className="detalle-tarjeta">
             <h2>Estado del artículo</h2>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
@@ -246,6 +256,13 @@ export default function ArticuloDetallePage() {
           coautor={coautorQuitado}
           onCerrar={() => setCoautorQuitado(null)}
           onQuitado={handleQuitado}
+        />
+      )}
+      {confirmandoDeshabilitar && (
+        <DeshabilitarArticuloModal
+          articulo={articulo}
+          onCerrar={() => setConfirmandoDeshabilitar(false)}
+          onDeshabilitado={() => navigate("/articulos", { replace: true })}
         />
       )}
     </section>
