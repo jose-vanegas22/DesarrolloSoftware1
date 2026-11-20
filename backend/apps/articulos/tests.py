@@ -1,4 +1,6 @@
 from datetime import timedelta
+from itertools import product
+from unittest.mock import patch
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework import status
@@ -7,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.eventos.models import Evento, FechaLimite
 from apps.usuarios.models import Usuario
 from .models import Articulo, AsignacionRevision, Autor, Revision, VersionArticulo
+from .services import calcular_resultado
 
 
 class EvaluacionArticuloTests(APITestCase):
@@ -86,12 +89,14 @@ class EvaluacionArticuloTests(APITestCase):
         for decision, estado in [('aceptar', 'aceptado'), ('rechazar', 'rechazado')]:
             with self.subTest(decision=decision):
                 Revision.objects.all().delete()
+                self.articulo.estado = Articulo.Estado.POSTULADO
+                self.articulo.save(update_fields=['estado'])
                 for i, revisor in enumerate(self.revisores):
                     self.autenticar(revisor)
                     voto = decision if i < 2 else ('rechazar' if decision == 'aceptar' else 'aceptar')
                     self.assertEqual(self.client.post(self.url, {**self.datos, 'decision': voto}).status_code, 201)
                     self.articulo.refresh_from_db()
-                    self.assertEqual(self.articulo.estado, 'en_revision' if i == 0 else estado)
+                    self.assertEqual(self.articulo.estado, 'en_revision' if i < 2 else estado)
 
     def test_rechaza_fuera_del_plazo_o_sin_fechas(self):
         for etapa, desplazamiento in [('revision', -1), ('postulacion', 1)]:
@@ -137,6 +142,82 @@ class EvaluacionArticuloTests(APITestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertFalse(respuesta.data['evaluacion']['puede_evaluar'])
         self.assertEqual(len(self.client.get('/api/articulos/').data), 1)
+
+
+        # HU-18: pruebas del calculo del resultado con las tres evaluaciones
+    def test_resultado_de_las_ocho_combinaciones_de_votos(self):
+        for votos in product(('aceptar', 'rechazar'), repeat=3):
+            with self.subTest(votos=votos):
+                Revision.objects.all().delete()
+                self.articulo.estado = Articulo.Estado.POSTULADO
+                self.articulo.save(update_fields=['estado'])
+                for indice, voto in enumerate(votos):
+                    self.autenticar(self.revisores[indice])
+                    respuesta = self.client.post(self.url, {**self.datos, 'decision': voto})
+                    self.assertEqual(respuesta.status_code, 201, respuesta.data)
+                    self.articulo.refresh_from_db()
+                    esperado = 'en_revision' if indice < 2 else (
+                        'aceptado' if votos.count('aceptar') >= 2 else 'rechazado'
+                    )
+                    self.assertEqual(self.articulo.estado, esperado)
+                    self.assertEqual(Revision.objects.filter(asignacion__articulo=self.articulo).count(), indice + 1)
+
+    def test_calculo_sin_evaluaciones_no_decide(self):
+        self.articulo.estado = Articulo.Estado.EN_REVISION
+        self.articulo.save(update_fields=['estado'])
+        self.assertIsNone(calcular_resultado(self.articulo))
+        self.articulo.refresh_from_db()
+        self.assertEqual(self.articulo.estado, Articulo.Estado.EN_REVISION)
+
+    def test_recalculo_no_modifica_resultado_final(self):
+        for revisor in self.revisores:
+            self.autenticar(revisor)
+            self.assertEqual(self.client.post(self.url, self.datos).status_code, 201)
+        # El servicio debe leer el estado persistido, aunque reciba una instancia desactualizada.
+        self.articulo.estado = Articulo.Estado.EN_REVISION
+        self.assertIsNone(calcular_resultado(self.articulo))
+        self.articulo.refresh_from_db()
+        self.assertEqual(self.articulo.estado, Articulo.Estado.ACEPTADO)
+
+    def test_fallo_del_calculo_revierte_la_tercera_evaluacion(self):
+        for revisor in self.revisores[:2]:
+            self.autenticar(revisor)
+            self.assertEqual(self.client.post(self.url, self.datos).status_code, 201)
+        self.autenticar(self.revisores[2])
+        with patch('apps.articulos.services.calcular_resultado', side_effect=RuntimeError('Fallo de prueba')):
+            with self.assertRaises(RuntimeError):
+                self.client.post(self.url, self.datos)
+        self.assertEqual(Revision.objects.count(), 2)
+        self.articulo.refresh_from_db()
+        self.assertEqual(self.articulo.estado, Articulo.Estado.EN_REVISION)
+        self.assertEqual(self.client.post(self.url, self.datos).status_code, 201)
+        self.articulo.refresh_from_db()
+        self.assertEqual(self.articulo.estado, Articulo.Estado.ACEPTADO)
+
+    def test_no_se_registra_un_cuarto_voto(self):
+        for revisor in self.revisores:
+            self.autenticar(revisor)
+            self.assertEqual(self.client.post(self.url, self.datos).status_code, 201)
+        extra = Usuario.objects.create_user('extra@example.com', es_comite=True)
+        AsignacionRevision.objects.create(articulo=self.articulo, revisor=extra)
+        self.autenticar(extra)
+        self.assertEqual(self.client.post(self.url, {**self.datos, 'decision': 'rechazar'}).status_code, 400)
+        self.assertEqual(Revision.objects.count(), 3)
+        self.articulo.refresh_from_db()
+        self.assertEqual(self.articulo.estado, Articulo.Estado.ACEPTADO)
+
+    def test_no_cuenta_votos_de_otro_articulo(self):
+        otro = Articulo.objects.create(
+            evento=self.evento, autor_responsable=self.autor, titulo='Otro artículo',
+            resumen='Resumen', palabras_clave='prueba', linea_tematica='sistemas_software',
+        )
+        for revisor in self.revisores:
+            asignacion = AsignacionRevision.objects.create(articulo=otro, revisor=revisor)
+            Revision.objects.create(asignacion=asignacion, **self.datos)
+        self.assertEqual(self.client.post(self.url, self.datos).status_code, 201)
+        self.articulo.refresh_from_db()
+        self.assertEqual(self.articulo.estado, Articulo.Estado.EN_REVISION)
+
 
 
 # HU-13 (SCRUM-24): el autor modifica los datos de su articulo durante las etapas permitidas.

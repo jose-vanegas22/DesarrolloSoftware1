@@ -91,7 +91,7 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
 
     @extend_schema(
         summary='Evaluar artículo',
-        description='Solo comité asignado, sin autoría propia, tras cerrar postulaciones y hasta el límite de revisión. Una evaluación por asignación. Dos votos iguales determinan aceptación o rechazo.',
+        description='Solo comité asignado, sin autoría propia, tras cerrar postulaciones y hasta el límite de revisión. Una evaluación por asignación. El resultado se calcula al registrar las tres evaluaciones: con dos o más votos iguales se acepta o se rechaza.',
         request=RevisionSerializer,
         responses={201: RevisionSerializer},
     )
@@ -201,6 +201,10 @@ class ArticuloViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
                 for revisor in revisores:
                     if revisor.id not in actuales:
                         AsignacionRevision.objects.create(articulo=articulo, revisor=revisor)
+                        
+                if articulo.estado == Articulo.Estado.POSTULADO:  # Con los tres revisores asignados empieza la revision
+                    articulo.estado = Articulo.Estado.EN_REVISION
+                    articulo.save(update_fields=['estado', 'actualizado'])
 
             asignaciones = articulo.asignaciones_revision.select_related('revisor').order_by('creado', 'id')
             return Response(AsignacionRevisionSerializer(asignaciones, many=True).data, status=status.HTTP_201_CREATED)

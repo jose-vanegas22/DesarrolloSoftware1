@@ -30,6 +30,8 @@ export default function ArticuloDetallePage() {
   const [confirmandoDeshabilitar, setConfirmandoDeshabilitar] = useState(false);
   const navigate = useNavigate();
   const esComite = obtenerRolActivo() === "comite";
+  const [actualizandoResultado, setActualizandoResultado] = useState(false);
+  const [errorResultado, setErrorResultado] = useState("");
   const [nuevoArchivo, setNuevoArchivo] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
   const [errorPdf, setErrorPdf] = useState("");
@@ -46,6 +48,23 @@ export default function ArticuloDetallePage() {
         )
       );
   }, [id]);
+  
+
+  // Vuelve a consultar el articulo para ver si otro revisor completo las evaluaciones
+  const handleActualizarResultado = async () => {
+    setActualizandoResultado(true);
+    setErrorResultado("");
+    try {
+      const { data } = await getArticulo(id);
+      setArticulo(data);
+    } catch {
+      setErrorResultado("No se pudo actualizar el resultado. Intenta de nuevo.");
+    } finally {
+      setActualizandoResultado(false);
+    }
+  };
+
+
 
   const handleCambioArchivo = (event) => {
     const file = event.target.files?.[0];
@@ -153,18 +172,44 @@ export default function ArticuloDetallePage() {
       <div className="detalle-columnas">
         <div className="detalle-columna">
 
-          { }
-          <div className="detalle-tarjeta">
-            <h2>Estado del artículo</h2>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
-              <span className="detalle-etiqueta" style={{ fontSize: "1rem", padding: "0.4rem 0.8rem" }}>
-                {articulo.estado_nombre || "Estado no disponible"}
-              </span>
+          {esComite ? (
+            <section className="detalle-tarjeta">
+              <h2>Resultado de la evaluación</h2>
+              <div className="detalle-resultado">
+                <span className={`detalle-etiqueta detalle-resultado-etiqueta${
+                  articulo.estado === "aceptado" ? " detalle-resultado-aceptado" :
+                    articulo.estado === "rechazado" ? " detalle-resultado-rechazado" : ""
+                }`}>
+                  {articulo.estado === "aceptado" ? "Aceptado" :
+                    articulo.estado === "rechazado" ? "Rechazado" : "Resultado pendiente"}
+                </span>
+                <p className="detalle-texto">
+                  {articulo.estado === "aceptado"
+                    ? "El artículo fue aceptado con al menos dos votos a favor entre las tres evaluaciones."
+                    : articulo.estado === "rechazado"
+                      ? "El artículo fue rechazado con al menos dos votos en contra entre las tres evaluaciones."
+                      : "El resultado se calcula automáticamente cuando se registran las tres evaluaciones."}
+                </p>
+              </div>
+              {errorResultado && <p className="mensaje-error">{errorResultado}</p>}
+              <button className="boton boton-secundario detalle-resultado-actualizar" type="button" onClick={handleActualizarResultado} disabled={actualizandoResultado}>
+                {actualizandoResultado ? "Actualizando..." : "Actualizar resultado"}
+              </button>
+            </section>
+          ) : (
+            <div className="detalle-tarjeta">
+              <h2>Estado del artículo</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
+                <span className="detalle-etiqueta" style={{ fontSize: "1rem", padding: "0.4rem 0.8rem" }}>
+                  {articulo.estado_nombre || "Estado no disponible"}
+                </span>
+              </div>
+              <p className="detalle-texto" style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#555" }}>
+                Etapa actual en la que se encuentra tu postulación.
+              </p>
             </div>
-            <p className="detalle-texto" style={{ marginTop: "0.75rem", fontSize: "0.9rem", color: "#555" }}>
-              Etapa actual en la que se encuentra tu postulación.
-            </p>
-          </div>
+          )}
+
 
           <div className="detalle-tarjeta">
             <h2>Información</h2>
