@@ -205,6 +205,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API para la gestión de conferencias.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'ENUM_NAME_OVERRIDES': {'LineaTematicaEnum': 'apps.articulos.models.Articulo.LineaTematica'},
 }
 
 # Aqui añadimos la configuracion de reCAPTCHA

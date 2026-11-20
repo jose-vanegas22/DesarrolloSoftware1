@@ -5,6 +5,8 @@ import { getArticulo, reemplazarPdfArticulo } from "../../api/articulosApi";
 import { obtenerRolActivo } from "../../api/authApi";
 import QuitarCoautorModal from "./components/QuitarCoautorModal";
 import DeshabilitarArticuloModal from "./components/DeshabilitarArticuloModal";
+import FormularioEvaluacion from "./components/FormularioEvaluacion";
+import ListaEvaluaciones from "./components/ListaEvaluaciones";
 import "./ArticuloDetallePage.css";
 
 const formatearFecha = (fecha) =>
@@ -27,6 +29,7 @@ export default function ArticuloDetallePage() {
   const esGestor = ["administrador", "comite"].includes(obtenerRolActivo());
   const [confirmandoDeshabilitar, setConfirmandoDeshabilitar] = useState(false);
   const navigate = useNavigate();
+  const esComite = obtenerRolActivo() === "comite";
   const [nuevoArchivo, setNuevoArchivo] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
   const [errorPdf, setErrorPdf] = useState("");
@@ -214,7 +217,9 @@ export default function ArticuloDetallePage() {
               ))}
             </ul>
           </div>
+          {esAutor && <ListaEvaluaciones articuloId={articulo.id} />}
         </div>
+
 
         <div className="detalle-tarjeta">
           <h2>Artículo en PDF</h2>
@@ -222,6 +227,12 @@ export default function ArticuloDetallePage() {
             <p className="detalle-texto">Entregado el {formatearFecha(articulo.fecha_pdf)}</p>
           ) : (
             <p className="detalle-texto">Todavía no se ha entregado el PDF.</p>
+          )}
+
+          {articulo.pdf_url && (
+            <a className="boton boton-secundario" href={articulo.pdf_url} target="_blank" rel="noopener noreferrer">
+              Abrir PDF del artículo
+            </a>
           )}
 
           {esAutor && articulo.postulacion_abierta ? (
@@ -249,6 +260,20 @@ export default function ArticuloDetallePage() {
           )}
         </div>
       </div>
+
+      {esComite && (
+        <FormularioEvaluacion
+          key={articulo.id}
+          articuloId={articulo.id}
+          evaluacion={articulo.evaluacion}
+          onEvaluado={() => {
+            setMensaje("Evaluación registrada correctamente.");
+            getArticulo(id)
+              .then(({ data }) => setArticulo(data))
+              .catch(() => setMensaje("Evaluación registrada. Recarga la página para actualizar el estado del artículo."));
+          }}
+        />
+      )}
 
       {coautorQuitado && (
         <QuitarCoautorModal

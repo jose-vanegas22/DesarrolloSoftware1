@@ -9,4 +9,6 @@ class PermisoArticulos(BasePermission):
             return es_gestor(request)
         if view.action in ('list', 'retrieve'): # Consultar la lista o el detalle se permite a cualquier rol valido
             return rol is not None
+        if view.action in ('revisores', 'evaluar'): # Asignar/consultar revisores y evaluar queda solo para el comite
+            return rol == 'comite'
         return rol == 'autor'

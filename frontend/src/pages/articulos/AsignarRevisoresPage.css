@@ -1,0 +1,27 @@
+.revisores-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.revisores-lista label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.revisores-lista span {
+  display: flex;
+  flex-direction: column;
+}
+
+.revisores-lista small {
+  color: var(--color-texto-secundario);
+}
