@@ -1,4 +1,5 @@
 import { Pencil, Trash2 } from "lucide-react";
+import { LINEAS_TEMATICAS } from "../../articulos/lineasTematicas";
 
 const obtenerRoles = (usuario) => {
   const roles = [];
@@ -7,6 +8,10 @@ const obtenerRoles = (usuario) => {
   if (usuario.es_autor) roles.push("Autor");
   return roles;
 };
+
+// Convierte los valores guardados en los nombres de las lineas tematicas
+const obtenerEspecialidades = (usuario) =>
+  LINEAS_TEMATICAS.filter((linea) => (usuario.especialidades ?? []).includes(linea.valor)).map((linea) => linea.texto);
 
 export default function UsuariosTabla({ usuarios, onEditar, onBorrar }) {
   return (
@@ -34,6 +39,9 @@ export default function UsuariosTabla({ usuarios, onEditar, onBorrar }) {
                     <span className="usuarios-etiqueta" key={rol}>{rol}</span>
                   ))}
                 </div>
+                {obtenerEspecialidades(usuario).length > 0 && (
+                  <small className="usuarios-dato">Especialidades: {obtenerEspecialidades(usuario).join(", ")}</small>
+                )}
               </td>
               <td className="usuarios-estado">{usuario.activo ? "Activo" : "Inactivo"}</td>
               {onEditar && (
