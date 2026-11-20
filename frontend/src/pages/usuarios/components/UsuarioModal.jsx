@@ -1,7 +1,9 @@
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createUsuario, updateUsuario } from "../../../api/usuariosApi";
+import { obtenerRolActivo } from "../../../api/authApi";
 import CampoFormulario from "../../../components/CampoFormulario";
+import { LINEAS_TEMATICAS } from "../../articulos/lineasTematicas";
 
 const FORMULARIO_INICIAL = {
   nombres: "",
@@ -14,6 +16,7 @@ const FORMULARIO_INICIAL = {
   es_comite: false,
   es_autor: false,
   activo: true,
+  especialidades: [],
 };
 
 const ROLES = [
@@ -35,6 +38,7 @@ const obtenerFormulario = (usuario) => {
     es_comite: usuario.es_comite,
     es_autor: usuario.es_autor,
     activo: usuario.activo,
+    especialidades: usuario.especialidades ?? [],
   };
 };
 
@@ -45,6 +49,7 @@ export default function UsuarioModal({ usuario, onCerrar, onGuardado }) {
   const [errores, setErrores] = useState({});
   const [enviando, setEnviando] = useState(false);
   const modalRef = useRef(null);
+  const esAdministrador = obtenerRolActivo() === "administrador"; // Solo el administrador asigna especialidades
 
   useEffect(() => {
     modalRef.current.showModal();
@@ -54,6 +59,16 @@ export default function UsuarioModal({ usuario, onCerrar, onGuardado }) {
     const { name, type, checked, value } = e.target;
     setFormulario({ ...formulario, [name]: type === "checkbox" ? checked : value });
   };
+
+  // Marca o desmarca una linea tematica en las especialidades
+  const handleEspecialidad = (valor) => {
+    const actuales = formulario.especialidades;
+    setFormulario({
+      ...formulario,
+      especialidades: actuales.includes(valor) ? actuales.filter((linea) => linea !== valor) : [...actuales, valor],
+    });
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,6 +84,9 @@ export default function UsuarioModal({ usuario, onCerrar, onGuardado }) {
     try {
       const datos = { ...formulario };
       delete datos.confirmacion;
+
+      if (!datos.es_comite) datos.especialidades = []; // Solo el comite tiene especialidades
+      else if (!esAdministrador) delete datos.especialidades; // El comite no las envia, asi no las modifica
 
       if (editando) {
         if (!datos.password) delete datos.password;
@@ -144,6 +162,25 @@ export default function UsuarioModal({ usuario, onCerrar, onGuardado }) {
             </label>
           ))}
         </fieldset>
+
+
+        {formulario.es_comite && (
+          <fieldset className="usuario-modal-roles">
+            <legend>Especialidades</legend>
+            {LINEAS_TEMATICAS.map((linea) => (
+              <label key={linea.valor}>
+                <input
+                  type="checkbox"
+                  checked={formulario.especialidades.includes(linea.valor)}
+                  disabled={!esAdministrador}
+                  onChange={() => handleEspecialidad(linea.valor)}
+                />
+                {linea.texto}
+              </label>
+            ))}
+            {mostrarError("especialidades")}
+          </fieldset>
+        )}
 
         {editando && (
           <fieldset className="usuario-modal-roles">

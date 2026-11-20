@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from apps.articulos.models import Articulo
 from .models import Usuario
 from .permissions import PermisoUsuarios, es_gestor
 from .serializers import (
@@ -27,16 +28,23 @@ from rest_framework_simplejwt.tokens import RefreshToken
 @extend_schema_view(
     list=extend_schema(
         summary='Listar usuarios',
-        description='Disponible para cualquier usuario con sesión. Se puede filtrar por rol, estado y texto.',
+        description='Disponible para cualquier gestor con sesión (administrador o comité). '
+                    'Se puede filtrar por rol, estado, texto y línea temática. '
+                    'Por defecto, el filtro por línea temática devuelve solo miembros activos del comité que la tengan.',
         parameters=[
             OpenApiParameter('rol', str, enum=['administrador', 'comite', 'autor'], description='Filtra por rol'),
             OpenApiParameter('activo', bool, description='Filtra por usuarios activos o inactivos'),
             OpenApiParameter('buscar', str, description='Busca en nombres, apellidos y correo'),
+            OpenApiParameter(
+                'linea_tematica', str, enum=Articulo.LineaTematica.values,
+                description='Miembros del comité con esa especialidad. Por defecto solo activos',
+            ),
         ],
     ),
     create=extend_schema(
         summary='Crear usuario',
-        description='Solo administradores y miembros del comité. El usuario debe tener al menos un rol.',
+        description='Solo administradores y miembros del comité. El usuario debe tener al menos un rol. '
+                    'Solo el administrador puede asignar especialidades.',
     ),
     retrieve=extend_schema(
         summary='Consultar un usuario',
@@ -45,11 +53,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
     update=extend_schema(
         summary='Actualizar usuario (completo)',
         description='Administradores y comité pueden editar a cualquier usuario. '
-                    'Los demás solo pueden editar sus propios nombres, apellidos y teléfono.',
+                    'Los demás solo pueden editar sus propios nombres, apellidos y teléfono. '
+                    'Solo el administrador puede asignar o modificar especialidades.',
     ),
     partial_update=extend_schema(
         summary='Actualizar usuario (parcial)',
-        description='Mismas reglas que la actualización completa, pero solo se envían los campos a cambiar.',
+        description='Mismas reglas que la actualización completa, pero solo se envían los campos a cambiar. '
+                    'Solo el administrador puede asignar o modificar especialidades.',
     ),
     destroy=extend_schema(
         summary='Borrar usuario',
@@ -109,6 +119,19 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         activo = params.get('activo') # Filtra por usuarios activos o inactivos, si no se especifica, devuelve todos los usuarios
         if activo in ('true', 'false'):
             usuarios = usuarios.filter(activo=activo == 'true')
+
+        # Permite consultar que miembros del comite pueden revisar una linea tematica, para proponerlos como revisores.
+        linea_tematica = params.get('linea_tematica')
+        if linea_tematica:
+            if linea_tematica not in Articulo.LineaTematica.values:
+                raise ValidationError({'linea_tematica': 'La línea temática indicada no existe.'})
+            # No se usa __contains porque ese lookup de JSONField solo existe en PostgreSQL.
+            # Las comillas garantizan que coincida el elemento completo y no un fragmento.
+            usuarios = usuarios.filter(
+                es_comite=True, especialidades__icontains=f'"{linea_tematica}"',
+            )
+            if activo not in ('true', 'false'):
+                usuarios = usuarios.filter(activo=True) # Solo se proponen revisores que puedan trabajar
 
         buscar = params.get('buscar') # Busca por nombre, apellido o correo, si no se especifica, devuelve todos los usuarios
         if buscar:
