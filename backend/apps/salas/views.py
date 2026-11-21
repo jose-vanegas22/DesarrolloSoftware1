@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Sala
+from .permissions import PermisoSalas
 from .serializers import SalaSerializer
 
 
@@ -13,7 +14,7 @@ from .serializers import SalaSerializer
     ),
     create=extend_schema(
         summary='Registrar sala',
-        description='Disponible para cualquier usuario con sesión iniciada. El nombre de la sala debe ser único.',
+        description='Solo con rol activo de administrador o comité. El nombre de la sala debe ser único.',
     ),
     retrieve=extend_schema(
         summary='Consultar una sala',
@@ -21,11 +22,11 @@ from .serializers import SalaSerializer
     ),
     partial_update=extend_schema(
         summary='Editar sala',
-        description='Disponible para cualquier usuario con sesión iniciada. Permite cambiar el nombre y la capacidad; el estado no se modifica aquí.',
+        description='Solo con rol activo de administrador o comité. Permite cambiar el nombre y la capacidad; el estado no se modifica aquí.',
     ),
 )
 class SalaViewSet(viewsets.ModelViewSet):
     queryset = Sala.objects.all()
     serializer_class = SalaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoSalas]
     http_method_names = ['get', 'post', 'patch', 'head', 'options']
