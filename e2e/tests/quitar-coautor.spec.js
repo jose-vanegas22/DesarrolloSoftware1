@@ -1,7 +1,28 @@
 import { test, expect } from '@playwright/test';
 
-// No graba credenciales en trazas ni videos.
-test.use({ trace: 'off', video: 'off' });
+// EJECUTAR CON COMANDO: E2E_AUTOR_PASSWORD='[CONTRASEÑA-PRIVADA]' npx playwright test tests/quitar-coautor.spec.js --headed
+
+// Despues de cada ejecución, para poder repetir el proceso se debe volver a agregar al coautor con lo siguientes comandos (entorno virtual activo en backend):
+
+// python manage.py shell
+/* from apps.articulos.models import Articulo, Autor
+
+articulo = Articulo.objects.get(
+    pk=14,
+    autor_responsable__correo__iexact="juandavid@teste2e.com",
+)
+
+Autor.objects.get_or_create(
+    articulo=articulo,
+    correo="coautor2ede@prueba.com",
+    defaults={
+        "nombre": "coautor2ede",
+        "afiliacion": "univalle",
+    },
+)
+
+exit()
+*/
 
 test('E2E-12: el autor quita un coautor desde el detalle', async ({ page }) => {
   // Lee la contraseña del autor.
@@ -44,7 +65,6 @@ test('E2E-12: el autor quita un coautor desde el detalle', async ({ page }) => {
   // Comprueba el nombre y confirma en el cuadro de diálogo.
   const modal = page.getByRole('dialog');
   await expect(modal).toContainText('coautor2ede');
-
   await modal.getByRole('button', { name: 'Quitar coautor', exact: true }).click();
 
   // Comprueba el mensaje y que el coautor desapareció.
