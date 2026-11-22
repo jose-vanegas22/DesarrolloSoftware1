@@ -92,42 +92,6 @@ reglas de proteccion de `main` y exigir los dos checks. Crear este YAML no
 activa por si solo esa proteccion. Conviene configurarla tras comprobar la
 primera ejecucion real y los nombres de los checks en GitHub.
 
-## Probar sin cambiar el repositorio del equipo
-
-Editar y ejecutar comandos localmente no publica cambios ni genera ejecuciones
-en GitHub. La validacion real de Actions requiere subir el workflow a GitHub.
-
-Se puede usar una rama del repositorio del equipo y un PR hacia `main` sin
-fusionarlo. Eso no cambia `main`, pero si puede generar notificaciones segun
-las preferencias de los participantes.
-
-Si se prefiere un ensayo independiente, usar una copia en un repositorio
-personal, sin migrar ni sustituir el original. Con el workflow en `main`, un
-push a esa rama ejecuta CI en el repositorio personal. Conservar el remoto
-`origin` del equipo y usar un remoto adicional, por ejemplo `ci-pruebas`, o
-trabajar en otro clon. Copiar solo archivos versionados, no los `.env` locales.
-No crear un PR hacia el repositorio del equipo durante ese ensayo.
-
-## Alcance y siguientes etapas
-
-Esta version ejecuta las pruebas existentes sin reorganizarlas. Varias pruebas
-usan `APITestCase` y base de datos: son pruebas de API/integracion, no pruebas
-unitarias aisladas. El lint y el build tampoco son pruebas funcionales del
-frontend.
-
-Queda pendiente en el alcance acordado:
-
-- Clasificar las pruebas existentes y agregar pruebas unitarias, de integracion
-  y E2E segun los criterios de aceptacion y riesgos de cada funcionalidad.
-- Preparar las E2E para CI: servidores, datos aislados, navegadores, reportes y
-  evidencias. Las cuentas compartidas y su bloqueo temporal no son una base
-  reproducible para ejecuciones simultaneas.
-- Comprobar con PostgreSQL los comportamientos que SQLite no reproduce, como
-  los bloqueos concurrentes de filas.
-- Registrar HUs de Jira con subtareas y criterios de aceptacion, sin inventar
-  identificadores ni marcar como finalizado lo que no se haya verificado.
-- Completar el resumen del informe cuando se valide el alcance final.
-
 ## Validacion inicial (22 de noviembre de 2026)
 
 En la copia local, con Python 3.14.10 y Node 26.13.1:
@@ -140,13 +104,4 @@ En la copia local, con Python 3.14.10 y Node 26.13.1:
 | ESLint | Pasa. |
 | Build de Vite | Pasa. |
 
-Estos resultados corresponden a ejecuciones locales; la primera ejecucion en
-un runner de GitHub sigue pendiente. No se ejecutaron E2E como parte de esta
-version de CI.
-
-Se repitieron las comprobaciones en una copia temporal de los archivos
-versionados, sin los `.env` privados, y volvieron a pasar las 82 pruebas, lint
-y build. Esa comprobacion reutilizo las dependencias locales ya instaladas;
-la instalacion desde cero en el runner todavia debe verificarse. Tambien se
-comprobaron la sintaxis YAML y la estructura basica de los dos jobs; eso no
-sustituye ejecutar el workflow en GitHub.
+Estos resultados corresponden a ejecuciones locales, aun no se ejecutan los runners de GitHub Actions.
