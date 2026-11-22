@@ -53,7 +53,8 @@ test.describe('E2E-06 Subir el PDF del artículo (HU-68)', () => {
     await prepararPostulacion(page, titulo);
     await page.locator('#articulo-pdf').setInputFiles({ name: 'articulo-e2e-06.pdf', mimeType: 'application/pdf', buffer: PDF_VALIDO });
     await page.getByRole('button', { name: 'Postular artículo' }).click();
-    await expect(page.getByText('Artículo postulado correctamente.')).toBeVisible();
+    await expect(page.getByText('Artículo postulado correctamente.')).toBeVisible({ timeout: 20000 });
+
 
     await page.getByRole('link', { name: 'Artículos', exact: true }).click();
     await page.getByRole('link', { name: `Ver detalle de ${titulo}` }).click();
@@ -84,7 +85,7 @@ test.describe('E2E-06 Subir el PDF del artículo (HU-68)', () => {
     // Con un PDF válido el autor termina la postulación sin repetir los datos
     await page.locator('#articulo-pdf').setInputFiles({ name: 'articulo-e2e-06.pdf', mimeType: 'application/pdf', buffer: PDF_VALIDO });
     await page.getByRole('button', { name: 'Postular artículo' }).click();
-    await expect(page.getByText('Artículo postulado correctamente.')).toBeVisible();
+    await expect(page.getByText('Artículo postulado correctamente.')).toBeVisible({ timeout: 20000 });
   });
 
   test('E2E-06 (error): se rechaza un PDF de más de 10 MB', async ({ page }, testInfo) => {

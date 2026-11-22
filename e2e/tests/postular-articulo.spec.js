@@ -75,7 +75,7 @@ test.describe('E2E-05 Postular artículo con coautores (HU-10 y HU-11)', () => {
     await page.getByRole('button', { name: 'Postular artículo' }).click();
 
     // Vuelve a Conferencias con el mensaje de éxito
-    await expect(page).toHaveURL(/\/conferencias/);
+    await expect(page).toHaveURL(/\/conferencias/, { timeout: 20000 }); // Subir el PDF a Supabase puede tardar
     await expect(page.getByText('Artículo postulado correctamente.')).toBeVisible();
 
     // En el detalle el artículo aparece Postulado, con el autor responsable y los dos coautores
