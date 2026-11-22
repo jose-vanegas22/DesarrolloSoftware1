@@ -1,54 +1,45 @@
 import { test, expect } from '@playwright/test';
 
-const EMAIL_PRUEBA = 'miguelangelcruzgiron97@gmail.com';
-const PASSWORD_PRUEBA = 'America2008';
+const CORREO = 'autor.miguel@prueba.com';
+const PASSWORD = 'ClaveSegura123';
 
-async function intentarResolverRecaptcha(page) {
-  try {
-    const captchaFrame = page
-      .locator('iframe[src*="recaptcha"], iframe[title*="reCAPTCHA" i]')
-      .first();
-    await captchaFrame.waitFor({ state: 'visible', timeout: 3000 });
-    const checkbox = captchaFrame
-      .contentFrame()
-      .getByRole('checkbox', { name: /no soy un robot/i });
-
-    try {
-      await checkbox.click({ timeout: 2000 });
-    } catch {
-      await checkbox.press('Enter', { timeout: 2000 });
-    }
-  } catch {
-  
-  }
+async function iniciarSesion(page) {
+  await page.goto('/login');
+  await page.locator('#login-correo').fill(CORREO);
+  await page.locator('#login-password').fill(PASSWORD);
+  const captcha = page.frameLocator('iframe[title="reCAPTCHA"]').getByRole('checkbox');
+  await captcha.press('Space');
+  await expect(captcha).toBeChecked();
+  await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
+  await expect(page).toHaveURL(/\/inicio/);
 }
 
-test.describe('HU-05: Gestión de perfil de usuario', () => {
-  test('Editar apellidos y teléfono en Mi perfil y guardar cambios', async ({ page }) => {
-    await page.goto('http://localhost:5173/login');
+test('E2E-08: actualiza apellidos y teléfono del perfil', async ({ page }) => {
+  await iniciarSesion(page);
+  await page.getByRole('link', { name: 'Mi perfil' }).click();
 
-    await page.getByRole('textbox', { name: 'Correo electrónico' }).fill(EMAIL_PRUEBA);
-    await page.getByRole('textbox', { name: 'Contraseña' }).fill(PASSWORD_PRUEBA);
+  const telefono = `31${Date.now().toString().slice(-8)}`; // Distinto en cada corrida
+  await page.getByRole('textbox', { name: 'Apellidos' }).fill('Cruz Rincon');
+  await page.getByRole('textbox', { name: 'Teléfono' }).fill(telefono);
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(page.getByText('Perfil actualizado correctamente.')).toBeVisible();
 
-    await intentarResolverRecaptcha(page);
+  // Al recargar, los datos vienen del backend: asi se comprueba que se guardaron
+  await page.reload();
+  await expect(page.getByRole('textbox', { name: 'Apellidos' })).toHaveValue('Cruz Rincon');
+  await expect(page.getByRole('textbox', { name: 'Teléfono' })).toHaveValue(telefono);
+  await page.screenshot({ path: 'evidencias/E2E-08-perfil.png' });
+});
 
-    const botonLogin = page.getByRole('button', { name: 'Iniciar sesión' });
-    await expect(botonLogin).toBeVisible();
+test('E2E-08 (error): no guarda con un campo obligatorio vacío', async ({ page }) => {
+  await iniciarSesion(page);
+  await page.getByRole('link', { name: 'Mi perfil' }).click();
 
-    if (await botonLogin.isEnabled()) {
-      await botonLogin.click();
+  const apellidos = page.getByRole('textbox', { name: 'Apellidos' });
+  await apellidos.fill('');
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
 
-      await page.getByRole('link', { name: 'Mi perfil' }).click();
-
-      const apellidosInput = page.getByRole('textbox', { name: 'Apellidos' });
-      const telefonoInput = page.getByRole('textbox', { name: 'Teléfono' });
-
-      await apellidosInput.fill('Cruz Rincon');
-      await telefonoInput.fill('3164557589');
-      await page.getByRole('button', { name: 'Guardar cambios' }).click();
-
-      await expect(apellidosInput).toHaveValue('Cruz Rincon');
-      await expect(telefonoInput).toHaveValue('3164557589');
-    }
-  });
+  expect(await apellidos.evaluate((campo) => campo.validity.valueMissing)).toBe(true);
+  await expect(page.getByText('Perfil actualizado correctamente.')).toHaveCount(0);
+  await page.screenshot({ path: 'evidencias/E2E-08-campo-vacio.png' });
 });

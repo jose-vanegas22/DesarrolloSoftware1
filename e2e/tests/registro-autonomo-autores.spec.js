@@ -1,71 +1,35 @@
 import { test, expect } from '@playwright/test';
 
-async function intentarResolverRecaptcha(page) {
-  try {
-    const captchaFrame = page
-      .locator('iframe[src*="recaptcha"], iframe[title*="reCAPTCHA" i]')
-      .first();
-    await captchaFrame.waitFor({ state: 'visible', timeout: 3000 });
-    const checkbox = captchaFrame
-      .contentFrame()
-      .getByRole('checkbox', { name: /no soy un robot/i });
-
-    try {
-      await checkbox.click({ timeout: 2000 });
-    } catch {
-      await checkbox.press('Enter', { timeout: 2000 });
-    }
-  } catch {
-    
-  }
+async function marcarCaptcha(page) {
+  const captcha = page.frameLocator('iframe[title="reCAPTCHA"]').getByRole('checkbox');
+  await captcha.press('Space');
+  await expect(captcha).toBeChecked();
 }
 
-test.describe('HU-01: Registro de usuario', () => {
-  test('Registro exitoso de un nuevo usuario', async ({ page }) => {
-    const correoUnico = `aurora.${Date.now()}@gmail.com`;
+async function llenarRegistro(page, correo) {
+  await page.goto('/registro');
+  await page.getByRole('textbox', { name: 'Nombres' }).fill('Aurora');
+  await page.getByRole('textbox', { name: 'Apellidos' }).fill('Cruz Giron');
+  await page.getByRole('textbox', { name: 'Correo electrónico' }).fill(correo);
+  await page.getByRole('textbox', { name: 'Teléfono (opcional)' }).fill('3187598640');
+  await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('ClaveSegura123');
+  await page.getByRole('textbox', { name: 'Confirmar contraseña' }).fill('ClaveSegura123');
+  await marcarCaptcha(page);
+  await page.getByRole('button', { name: 'Crear cuenta' }).click();
+}
 
-    await page.goto('http://localhost:5173/login');
-    await page.getByRole('link', { name: 'Crear cuenta' }).click();
+test('E2E-07: registra un autor nuevo y lo lleva al inicio de sesión', async ({ page }) => {
+  await llenarRegistro(page, `aurora.${Date.now()}@example.com`);
 
-    await page.getByRole('textbox', { name: 'Nombres' }).fill('Aurora ');
-    await page.getByRole('textbox', { name: 'Apellidos' }).fill('Cruz Giron');
-    await page.getByRole('textbox', { name: 'Correo electrónico' }).fill(correoUnico);
-    await page.getByRole('textbox', { name: 'Teléfono (opcional)' }).fill('318759864');
-    await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('Aurora123');
-    await page.getByRole('textbox', { name: 'Confirmar contraseña' }).fill('Aurora123');
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByText('Cuenta creada. Ya puedes iniciar sesión.')).toBeVisible();
+  await page.screenshot({ path: 'evidencias/E2E-07-registro.png' });
+});
 
-    await intentarResolverRecaptcha(page);
+test('E2E-07 (error): rechaza un correo ya registrado', async ({ page }) => {
+  await llenarRegistro(page, 'autor.miguel@prueba.com'); // Cuenta de prueba que ya existe
 
-    const botonCrear = page.getByRole('button', { name: 'Crear cuenta' });
-    await expect(botonCrear).toBeVisible();
-
-    if (await botonCrear.isEnabled()) {
-      await botonCrear.click();
-      await expect(page).not.toHaveURL(/\/register|\/crear-cuenta/i);
-    }
-  });
-
-  test('Intento de registro con correo ya registrado', async ({ page }) => {
-    await page.goto('http://localhost:5173/login');
-    await page.getByRole('link', { name: 'Crear cuenta' }).click();
-
-    await page.getByRole('textbox', { name: 'Nombres' }).fill('Jessica ');
-    await page.getByRole('textbox', { name: 'Apellidos' }).fill('Alonso');
-    await page
-      .getByRole('textbox', { name: 'Correo electrónico' })
-      .fill('miguelangelcruzgiron97@gmail.com');
-    await page.getByRole('textbox', { name: 'Teléfono (opcional)' }).fill('3147896345');
-    await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('123A');
-    await page.getByRole('textbox', { name: 'Confirmar contraseña' }).fill('123A');
-
-    await intentarResolverRecaptcha(page);
-
-    const botonCrear = page.getByRole('button', { name: 'Crear cuenta' });
-    await expect(botonCrear).toBeVisible();
-
-    if (await botonCrear.isEnabled()) {
-      await botonCrear.click();
-      await expect(page.getByText(/correo|registrado|existe|error|captcha/i).first()).toBeVisible();
-    }
-  });
+  await expect(page.getByText(/Ya existe/)).toBeVisible();
+  await expect(page).toHaveURL(/\/registro/);
+  await page.screenshot({ path: 'evidencias/E2E-07-correo-repetido.png' });
 });
