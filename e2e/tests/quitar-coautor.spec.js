@@ -87,3 +87,36 @@ test('E2E-12: el autor quita un coautor desde el detalle', async ({ page }) => {
   // Captura el artículo después de recargar.
   await page.screenshot({ path: 'evidencias/E2E-12-coautor-quitado-recarga.png', fullPage: true });
 });
+
+
+test('E2E-12 (error): no deja quitar al autor responsable', async ({ page }) => {
+  const password = process.env.E2E_AUTOR_PASSWORD;
+  expect(password, 'Define E2E_AUTOR_PASSWORD antes de ejecutar la prueba').toBeTruthy();
+
+  await page.goto('/login');
+  await page.getByRole('textbox', { name: 'Correo electrónico' }).fill('juandavid@teste2e.com');
+  await page.getByRole('textbox', { name: 'Contraseña' }).fill(password);
+  const captcha = page.frameLocator('iframe[title="reCAPTCHA"]').getByRole('checkbox');
+  await captcha.press('Space');
+  await expect(captcha).toBeChecked();
+  await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
+  await page.getByRole('link', { name: 'Artículos' }).click();
+  await page.getByRole('link', { name: 'Ver detalle de articulo2', exact: true }).click();
+
+  // El responsable aparece en la lista, pero sin el botón para quitarlo
+  const responsable = page.locator('.detalle-autores').getByRole('listitem').filter({ hasText: 'juandavid@teste2e.com' });
+  await expect(responsable).toContainText('Responsable');
+  await expect(responsable.getByRole('button', { name: /^Quitar a / })).toHaveCount(0);
+  await page.screenshot({ path: 'evidencias/E2E-12-responsable.png', fullPage: true });
+
+  // Y el backend tampoco lo permite, aunque se intente directamente por la API
+  const api = 'http://127.0.0.1:8000/api';
+  const id = page.url().split('/').pop();
+  const access = await page.evaluate(() => localStorage.getItem('access'));
+  const headers = { Authorization: `Bearer ${access}` };
+  const detalle = await (await page.request.get(`${api}/articulos/${id}/`, { headers })).json();
+  const autorResponsable = detalle.autores.find((autor) => autor.correo === 'juandavid@teste2e.com');
+  const respuesta = await page.request.delete(`${api}/articulos/${id}/autores/${autorResponsable.id}/`, { headers });
+  expect(respuesta.status()).toBe(400);
+  expect((await respuesta.json()).detail).toContain('responsable');
+});
