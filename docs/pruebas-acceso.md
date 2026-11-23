@@ -32,8 +32,7 @@ ejecuta las pruebas de Django, lint y build; todavia no ejecuta las E2E.
 | [Servicio de CAPTCHA](../backend/apps/usuarios/services.py) | Consulta Google y devuelve un resultado booleano. |
 | [Configuracion de pruebas](../backend/config/settings_test.py) | Proporciona base SQLite y almacenamiento en memoria para las pruebas de Django. |
 
-Los endpoints necesarios ya existen. No hace falta desarrollar una nueva API
-para comprobar los casos pendientes.
+No fue necesario desarrollar nuevos enpoints para comprobar los casos pendientes.
 
 ## Inventario previo a los cambios
 
@@ -49,20 +48,6 @@ corresponden a metodos de prueba, no a cada iteracion de `subTest`.
 | [usuarios/tests.py](../backend/apps/usuarios/tests.py) y [eventos/tests.py](../backend/apps/eventos/tests.py) | 0 | Solo contienen la plantilla inicial, sin metodos de prueba. |
 | [login-bloqueo.spec.js](../e2e/tests/login-bloqueo.spec.js) | 2 E2E | Login con reCAPTCHA y cinco contraseñas incorrectas seguidas de rechazo de la correcta. No comprueba CAPTCHA invalido, estado interno del contador ni vencimiento del bloqueo. |
 | [rol-activo.spec.js](../e2e/tests/rol-activo.spec.js) | 2 E2E | Seleccion de comite por usuario multirrol y ausencia de la opcion administrador no asignada. Comprueba interfaz y `localStorage`, pero no el rechazo de una solicitud directa con rol no asignado ni los claims de ambos JWT. |
-
-Ejemplos concretos que se deben conservar y no repetir en nuevas pruebas de
-los mismos endpoints de articulos:
-
-- `EditarArticuloTests.test_usuario_con_varios_roles_edita_con_rol_activo_autor`
-  y `test_autor_con_rol_activo_comite_no_puede_editar_su_articulo`.
-- `DeshabilitarArticuloTests.test_autor_recibe_403_incluso_si_tiene_otro_rol`,
-  `test_usuario_multirrol_puede_deshabilitar_con_rol_comite`,
-  `test_sin_sesion_recibe_401` y `test_sin_rol_activo_recibe_403`.
-- `EvaluacionArticuloTests.test_exige_rol_activo_comite`.
-
-Estos casos ejercitan permisos sobre recursos. Un token creado con
-`RefreshToken.for_user` permite comprobar como se usa el rol, pero no demuestra
-que el endpoint de login o el de seleccion de rol lo haya emitido correctamente.
 
 ## Cobertura incorporada
 
@@ -143,8 +128,7 @@ base de datos no permanecen al terminar.
 
 Los comentarios de las clases relacionan las pruebas con los requisitos de
 acceso. No se movieron ni duplicaron las pruebas de otras funcionalidades.
-Las E2E se conservan para el recorrido visual; estas pruebas verifican ademas
-estado interno, tokens y solicitudes que la interfaz no ofrece.
+Estas pruebas verifican ademas estado interno, tokens y solicitudes que la interfaz no ofrece.
 
 ## Ejecucion y resultados
 
@@ -179,11 +163,11 @@ Resultado local del 23 de noviembre de 2026:
 - La base temporal se elimino al terminar. Los resultados de esta version
   aun no se han comprobado en un runner de GitHub.
 
-El comando general descubre automaticamente las nuevas clases; no requiere
-cambiar el workflow.
+El comando general de pruebas descubre automaticamente las nuevas clases,
+no fue necesario cambiar el workflow.
 
 No se instalaron dependencias ni se modifico la logica de la aplicacion,
-la configuracion de pruebas o el workflow. No se ejecutaron E2E. Estas pruebas
+la configuracion de pruebas o el workflow. Estas pruebas
 no verifican la disponibilidad real de Google ni comportamientos exclusivos
 de PostgreSQL; su objetivo es comprobar las reglas de acceso de forma aislada
 de esos servicios.
