@@ -89,44 +89,9 @@ fallen. No se generan aun reportes de cobertura ni se suben artifacts.
 
 Para bloquear merges cuando CI falla, un administrador debe configurar las
 reglas de proteccion de `main` y exigir los dos checks. Crear este YAML no
-activa por si solo esa proteccion. Conviene configurarla tras comprobar la
-primera ejecucion real y los nombres de los checks en GitHub.
-
-## Probar sin cambiar el repositorio del equipo
-
-Editar y ejecutar comandos localmente no publica cambios ni genera ejecuciones
-en GitHub. La validacion real de Actions requiere subir el workflow a GitHub.
-
-Se puede usar una rama del repositorio del equipo y un PR hacia `main` sin
-fusionarlo. Eso no cambia `main`, pero si puede generar notificaciones segun
-las preferencias de los participantes.
-
-Si se prefiere un ensayo independiente, usar una copia en un repositorio
-personal, sin migrar ni sustituir el original. Con el workflow en `main`, un
-push a esa rama ejecuta CI en el repositorio personal. Conservar el remoto
-`origin` del equipo y usar un remoto adicional, por ejemplo `ci-pruebas`, o
-trabajar en otro clon. Copiar solo archivos versionados, no los `.env` locales.
-No crear un PR hacia el repositorio del equipo durante ese ensayo.
-
-## Alcance y siguientes etapas
-
-Esta version ejecuta las pruebas existentes sin reorganizarlas. Varias pruebas
-usan `APITestCase` y base de datos: son pruebas de API/integracion, no pruebas
-unitarias aisladas. El lint y el build tampoco son pruebas funcionales del
-frontend.
-
-Queda pendiente en el alcance acordado:
-
-- Clasificar las pruebas existentes y agregar pruebas unitarias, de integracion
-  y E2E segun los criterios de aceptacion y riesgos de cada funcionalidad.
-- Preparar las E2E para CI: servidores, datos aislados, navegadores, reportes y
-  evidencias. Las cuentas compartidas y su bloqueo temporal no son una base
-  reproducible para ejecuciones simultaneas.
-- Comprobar con PostgreSQL los comportamientos que SQLite no reproduce, como
-  los bloqueos concurrentes de filas.
-- Registrar HUs de Jira con subtareas y criterios de aceptacion, sin inventar
-  identificadores ni marcar como finalizado lo que no se haya verificado.
-- Completar el resumen del informe cuando se valide el alcance final.
+activa por si solo esa proteccion. Los nombres comprobados en GitHub son
+`Backend - comprobaciones y pruebas` y `Frontend - lint y build`.
+La configuracion y validacion de esa proteccion corresponden a SCRUM-613.
 
 ## Validacion inicial (22 de noviembre de 2026)
 
@@ -140,13 +105,30 @@ En la copia local, con Python 3.14.10 y Node 26.13.1:
 | ESLint | Pasa. |
 | Build de Vite | Pasa. |
 
-Estos resultados corresponden a ejecuciones locales; la primera ejecucion en
-un runner de GitHub sigue pendiente. No se ejecutaron E2E como parte de esta
-version de CI.
-
 Se repitieron las comprobaciones en una copia temporal de los archivos
 versionados, sin los `.env` privados, y volvieron a pasar las 82 pruebas, lint
-y build. Esa comprobacion reutilizo las dependencias locales ya instaladas;
-la instalacion desde cero en el runner todavia debe verificarse. Tambien se
-comprobaron la sintaxis YAML y la estructura basica de los dos jobs; eso no
-sustituye ejecutar el workflow en GitHub.
+y build. No se ejecutaron E2E como parte de esta version de CI.
+
+La validacion de SCRUM-599, subtarea de SCRUM-595, tambien se realizo en
+GitHub Actions mediante el [PR de ensayo #48](https://github.com/jose-vanegas22/DesarrolloSoftware1/pull/48),
+dirigido a `main` desde `feature/SCRUM-595-prueba-ci`, sin fusionarlo.
+
+| Ensayo | Commit | Backend | Frontend | Evidencia en GitHub |
+| --- | --- | --- | --- | --- |
+| Apertura del PR | `cf6fefc` | Pasa. | Pasa. | [Ejecucion inicial](https://github.com/jose-vanegas22/DesarrolloSoftware1/actions/runs/45096431015) |
+| Actualizacion con fallo deliberado | `892165e` | Falla en la prueba deliberada. | Pasa. | [Fallo controlado](https://github.com/jose-vanegas22/DesarrolloSoftware1/actions/runs/45097866974) |
+| Actualizacion tras retirar el fallo | `c9fa5a1` | Pasa. | Pasa. | [Recuperacion](https://github.com/jose-vanegas22/DesarrolloSoftware1/actions/runs/45098659110) |
+
+La instalacion de dependencias y las comprobaciones de ambos jobs pasaron en
+los runners de GitHub. El ensayo agrego temporalmente una prueba que fallaba
+de forma explicita: se ejecutaron 83 pruebas, con un unico fallo deliberado.
+Al retirar ese archivo, las 82 pruebas originales volvieron a pasar. No se
+debilitaron las pruebas existentes ni se modifico codigo de negocio.
+El fallo solo se incluyo en la rama de ensayo; no forma parte de la rama
+definitiva `feature/SCRUM-595-integracion-continua`.
+
+Esto verifica la ejecucion automatica al abrir y actualizar un PR y la
+deteccion de una prueba fallida. Queda por comprobar el evento `push` a
+`main` cuando se integre el PR definitivo. Estos ensayos no demuestran que
+GitHub bloquee un merge con checks fallidos: esa comprobacion pertenece a
+SCRUM-613.
