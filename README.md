@@ -43,7 +43,7 @@ DesarrolloSoftware1/
 
 ## Requisitos
 
-- [Python](https://www.python.org/downloads/) 3.11 o superior (al instalarlo, marca **Add Python to PATH**)
+- [Python](https://www.python.org/downloads/) 3.12 o superior (al instalarlo, marca **Add Python to PATH**). CI usa Python 3.14.
 - [Node.js](https://nodejs.org/) 20 LTS o superior
 - [Git](https://git-scm.com/)
 
@@ -149,6 +149,17 @@ python manage.py test apps.articulos.tests.DeshabilitarArticuloTests --settings=
 Esta configuracion usa SQLite y almacenamiento de archivos en memoria. Django crea las tablas y los datos de prueba, y descarta la base al terminar. No requiere crear una base en Supabase, completar credenciales ni levantar el backend o el frontend. La clave de firma incluida es ficticia y exclusiva para pruebas.
 
 Usa siempre `--settings=config.settings_test` para estas pruebas aisladas. Esta configuracion no es para `runserver` ni comprueba los bloqueos concurrentes de PostgreSQL. Las pruebas de navegador se ejecutan por separado como se explica a continuacion.
+
+## Integración continua
+
+El workflow `.github/workflows/ci.yml` comprueba los PR hacia `main` y los pushes
+a `main` con dos jobs: configuración, migraciones y todas las pruebas de Django;
+y lint y build del frontend. Usa Python 3.14, Node 26 y la configuración de
+pruebas aisladas, sin credenciales de Supabase. Esta primera versión no ejecuta
+E2E ni despliega la aplicación.
+
+Consulta [la guía de CI](docs/integracion-continua.md) para reproducir los comandos,
+leer los resultados, probar el workflow y conocer las limitaciones y siguientes etapas.
 
 ## Pruebas end to end
 
