@@ -1,0 +1,23 @@
+[run]
+branch = True
+source = apps
+relative_files = True
+data_file = reportes/.coverage
+omit =
+    */migrations/*
+    */tests.py
+    */test_*.py
+    */tests/*
+
+[report]
+show_missing = True
+precision = 2
+
+[html]
+directory = reportes/cobertura/html
+
+[xml]
+output = reportes/cobertura/coverage.xml
+
+[json]
+output = reportes/cobertura/coverage.json
