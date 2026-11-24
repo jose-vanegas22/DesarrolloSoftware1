@@ -13,15 +13,7 @@ archivos y datos locales se documenta en [Entorno E2E](entorno-e2e.md).
 
 Playwright descubre **26 casos en 12 archivos**, correspondientes a E2E-03
 hasta E2E-14, con Chromium. Son 12 grupos funcionales; varios incluyen mas
-de dos casos. El listado no demuestra que las pruebas pasen.
-
-La guia del equipo, `contexto/Guía de pruebas E2E con Playwright (1).pdf`,
-paginas 1 y 2, incluye tambien E2E-01 (crear conferencia) y E2E-02 (fechas
-limite). Sus archivos no estan en la version de `main` revisada. Se registran
-como pendientes de disponibilidad, no como aprobados ni excluidos del sprint.
-Confirmar si estan pendientes de integrar antes de cerrar el alcance de CI.
-Los nombres de archivo de registro y perfil difieren de los sugeridos en la
-guia, pero sus casos estan presentes y se identifican por su ID.
+de dos casos.
 
 ## Casos disponibles y sus precondiciones
 
@@ -44,19 +36,17 @@ entrar sin pasar por la pantalla de seleccion de rol.
 | E2E-13: [editar-articulo.spec.js](../e2e/tests/editar-articulo.spec.js) | 2: editar titulo y resumen; ocultar Editar y bloquear formulario con plazo cerrado. | `autor.jose@prueba.com`; articulo propio `Articulo editable e2e` con postulacion abierta y `Articulo de prueba para e2e` con postulacion cerrada. | El positivo cambia el titulo y resumen sin restaurarlos. El selector parcial puede seguir coincidiendo, pero no garantiza un estado inicial reproducible. |
 | E2E-14: [cerrar-sesion.spec.js](../e2e/tests/cerrar-sesion.spec.js) | 2: volver al login y borrar access; rechazar renovacion con refresh anterior y redirigir una pagina protegida. | `autor.jose@prueba.com`, un solo rol autor; API en `http://127.0.0.1:8000/api`; migraciones de blacklist aplicadas. | Invalida refresh y limpia sesion del navegador. El caso negativo prueba el refresh anterior; no demuestra revocacion inmediata del access anterior. |
 
-## Casos previstos que no estan en main
+## Casos previstos que por el momento no estan en main
 
 | Grupo | Lo indicado por la guia | Precondiciones propuestas, aun sin contrastar con una prueba implementada |
 | --- | --- | --- |
 | E2E-01 | Crear conferencia y verla en la lista; rechazar fecha final anterior a la inicial. Archivo esperado: `crear-conferencia.spec.js`. | Gestor (administrador o comite, segun `PermisoEventos`), nombre identificable y fechas de inicio/fin validas. El positivo crea una conferencia. |
 | E2E-02 | Configurar fechas limite; rechazar orden invalido. Archivo esperado: `fechas-limite.spec.js`. | Gestor, conferencia propia del ensayo y cuatro fechas: postulacion, revision, version corregida y version final, en orden estricto. El positivo cambia sus plazos. |
 
-No se crearon sustitutos ni se retiraron estos casos del alcance. Se debe
-revisar su implementacion cuando este disponible.
 
 ## Cuentas necesarias para preparar el entorno
 
-Los identificadores siguientes describen las dependencias del codigo actual.
+Los identificadores siguientes describen las dependencias del codigo actual en cada prueba para los roles.
 En CI se deben crear registros de prueba locales, no acceder a las cuentas
 compartidas. No es necesario conocer sus contraseñas reales: la preparacion
 del entorno puede establecer contraseñas ficticias y pasarlas a las pruebas.
@@ -115,7 +105,7 @@ prepararse de antemano sustituyendo la operacion que la prueba verifica.
 
 Es preferible que las adaptaciones identifiquen la conferencia y el articulo
 por datos de prueba estables o por los IDs devueltos al prepararlos, en lugar
-de depender de IDs de Supabase. No se han cambiado los selectores en esta etapa.
+de depender de IDs de Supabase.
 
 ## Archivos y servicios
 
@@ -140,11 +130,6 @@ de depender de IDs de Supabase. No se han cambiado los selectores en esta etapa.
 - Registro y creacion de usuarios llaman al correo de bienvenida. Configurar
   correo local de pruebas para evitar SMTP externo; el resultado de estas E2E
   no depende de recibir un mensaje en una cuenta real.
-
-Fuentes: [settings.py](../backend/config/settings.py),
-[settings_test.py](../backend/config/settings_test.py),
-[servicios de usuarios](../backend/apps/usuarios/services.py) y
-[validacion de articulos y PDF](../backend/apps/articulos/serializers.py).
 
 ## Configuracion y evidencias actuales
 
@@ -175,41 +160,3 @@ y un job E2E que instala Chromium y ejecuta las copias aisladas. Playwright
 inicia la API y el frontend. La publicacion de reportes y evidencias como artifacts
 esta configurada; su descarga real en GitHub queda pendiente de validacion.
 `e2e/package.json` no define scripts de prueba; se utiliza la CLI de Playwright.
-
-## Bloqueos y decisiones para las siguientes subtareas
-
-1. Confirmar la disponibilidad de E2E-01 y E2E-02. No declarar cubierto todo el
-   reparto del equipo con solo los 26 casos encontrados.
-2. Preparar cuentas, conferencias, plazos, articulos y autoria locales. No usar
-   esperas de 15 minutos ni restauracion manual del coautor.
-3. Aislar base, almacenamiento y correo; definir el tratamiento de CAPTCHA.
-   No simular la API del proyecto para hacer pasar los recorridos.
-4. Parametrizar credenciales y rutas, y sustituir dependencias de IDs fijos.
-   Conservar las aserciones funcionales existentes. Verificar que existe el
-   articulo ajeno usado en la prueba de visibilidad negativa.
-5. Gestionar contaminacion entre casos: bloqueo de cuenta, coautor eliminado,
-   perfil modificado, titulo editado, articulos/usuarios acumulados y blacklist.
-   Los sufijos con `Date.now()` evitan algunos duplicados, pero no limpian datos.
-6. Iniciar servidores con espera de disponibilidad, ejecutar Chromium y guardar
-   reporte/evidencias tanto si pasan como si fallan las pruebas.
-7. Ejecutar dos veces desde datos nuevos y comprobar un fallo controlado antes
-   de dar por completada la incorporacion de E2E a CI.
-
-## Verificacion realizada
-
-Con Playwright ya instalado, desde `e2e/` se ejecuto:
-
-```bash
-./node_modules/.bin/playwright test --list --reporter=list
-```
-
-Resultado: `Total: 26 tests in 12 files`, salida cero. Este comando verifica
-el descubrimiento y la carga de los archivos sin abrir el navegador ni ejecutar
-sus pasos. No demuestra que Chromium este instalado ni que los casos pasen.
-
-No se instalaron dependencias, no se iniciaron servidores y no se modificaron
-datos compartidos. Se revisaron los archivos de prueba, la guia del equipo,
-la configuracion y las reglas de backend relacionadas. La unica incorporacion
-del inventario fue este documento. La preparacion local se incorporo despues
-y se describe en su guia. El workflow comprueba esa preparacion. Los casos
-se adaptaron despues; su ejecucion con navegador en CI sigue pendiente.
