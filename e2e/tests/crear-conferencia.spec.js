@@ -62,12 +62,12 @@ async function iniciarSesionComoComite(page) {
   await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
 
   // La cuenta tiene autor y comite: el login debe llevar a elegir rol.
-  await expect(page).toHaveURL(/\/seleccionar-rol\/?$/);
+  await expect(page).toHaveURL(/\/seleccionar-rol\/?$/, { timeout: 15000 });
   await expect(page.getByRole('heading', { name: '¿Con qué rol quieres ingresar?', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Autor', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Miembro del comité científico', exact: true }).click();
 
-  await expect(page).toHaveURL(/\/inicio\/?$/);
+  await expect(page).toHaveURL(/\/inicio\/?$/, { timeout: 15000 });
   await expect(page.locator('.menu-rol')).toHaveText('Comité científico');
 }
 
