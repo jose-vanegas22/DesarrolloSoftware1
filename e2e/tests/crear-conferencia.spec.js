@@ -116,6 +116,7 @@ test.describe('E2E-01 Crear conferencia (HU-08 / SCRUM-567)', () => {
     await page.getByLabel('Buscar').fill(nombre);
     await page.getByRole('button', { name: 'Filtrar' }).click();
     await expect(page.getByRole('cell', { name: nombre, exact: true })).toBeVisible();
+    await expect(page.getByRole('row')).toHaveCount(2); // encabezado + la conferencia filtrada
 
     await evidencia(page, testInfo, 'E2E-01-crear-conferencia');
   });
