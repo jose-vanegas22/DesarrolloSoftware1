@@ -3,9 +3,9 @@
 ## Que es un artifact
 
 Es un conjunto de archivos que GitHub guarda asociado a una ejecucion del
-workflow. No es un commit, una rama ni una publicacion de la aplicacion.
-El runner crea los archivos y `actions/upload-artifact` los copia al almacenamiento
-de GitHub antes de que termine el job. Asi se pueden descargar despues.
+workflow; no es un commit, una rama ni una publicacion de la aplicacion.
+`actions/upload-artifact` los copia desde el runner al almacenamiento de GitHub
+antes de que termine el job, para poder descargarlos despues.
 
 El workflow publica dos artifacts independientes:
 
@@ -21,8 +21,8 @@ El job backend usa Bash con `pipefail`, de modo que guardar el log con `tee`
 no oculta el codigo de error del ejecutor de tests.
 
 Si la instalacion o el arranque falla antes de generar archivos, la subida
-avisa que no encontro resultados; no fabrica evidencias. Si el runner se pierde
-o la ejecucion se termina abruptamente, la subida tampoco esta garantizada.
+avisa que no encontro resultados. Si el runner se pierde o la ejecucion se
+termina abruptamente, la subida tampoco esta garantizada.
 La conservacion durante 30 dias queda sujeta a los limites del repositorio.
 Descargar los archivos antes de su vencimiento si se necesitan para el informe.
 
@@ -48,17 +48,15 @@ no son un sitio web publico. No hay que hacer commit de los reportes.
 
 Coverage.py observa el codigo Python ejecutado durante los tests Django.
 
-- **Lineas:** sentencias ejecutables que se alcanzaron. Comentarios y lineas
-  en blanco no cuentan como sentencias.
-- **Ramas:** caminos de salida de decisiones y otros saltos de control. Por
-  ejemplo, probar un `if` solo con un valor verdadero no recorre su alternativa.
+- **Lineas:** sentencias ejecutables que se alcanzaron.
+- **Ramas:** caminos de salida de decisiones y otros saltos de control. Probar
+  un `if` solo con un valor verdadero no recorre su alternativa.
 - **Indicador combinado:** cuando se activan ramas, la columna `Cover` combina
   sentencias y caminos cubiertos. No debe citarse como porcentaje solo de lineas.
 
 Ejecutar una linea no demuestra que exista una asercion correcta sobre ella.
-Un 100 % no garantiza ausencia de defectos, requisitos completos, buena seguridad
-ni todas las combinaciones posibles. El reporte ayuda a decidir donde añadir
-pruebas relevantes, no a perseguir un numero aislado.
+El reporte ayuda a decidir donde añadir pruebas relevantes, no a perseguir un
+numero aislado.
 
 ## Alcance de la medicion
 
@@ -74,8 +72,8 @@ indicadores ni presentar la cobertura del backend como cobertura del proyecto.
 
 Por ese motivo los comandos `preparar_e2e` y `restablecer_e2e` aparecen con 0 %
 en esta medicion aunque los recorridos E2E los utilicen en otro proceso.
-No se fija por ahora un umbral minimo que bloquee CI: primero se registra una
-linea base y el equipo puede acordar objetivos con pruebas de comportamiento.
+CI no impone un umbral minimo de cobertura: los valores se registran como linea
+base y el equipo puede acordar objetivos con pruebas de comportamiento.
 
 ## Generar cobertura localmente
 
@@ -100,7 +98,7 @@ coverage.py para usar el comando habitual `python manage.py test`.
 El HTML queda en `backend/reportes/cobertura/html/index.html`; el JSON y XML
 contienen los datos para otras herramientas. `coverage run` inicia una medicion
 nueva; generar reportes despues de una suite fallida no la convierte en aprobada.
-`backend/.gitignore` excluye los resultados; el `.gitignore` de la raiz se conserva.
+`backend/.gitignore` excluye los resultados.
 
 ## Evidencias de Playwright
 
@@ -108,7 +106,7 @@ Las copias CI generan HTML y `e2e/test-results/resultados.json`. Mantienen sus
 capturas explicitas y añaden captura automatica ante un fallo. La configuracion
 retiene trazas de los intentos fallidos, incluso el primero; no guarda trazas
 de los que pasan. Los casos de consulta conservan su opcion especifica de
-trazas desactivadas. No se habilitaron videos.
+trazas desactivadas. No se graban videos.
 
 Para ejecutar los recorridos como CI, preparar una base y carpeta nuevas con
 `preparar_e2e`, exportar las mismas variables de conexion y `CONECTA_E2E_DIR`
@@ -128,6 +126,8 @@ separados por ejecucion/intento hasta vencer la retencion.
 
 ## Linea base local del 23 de noviembre de 2026
 
+### Cobertura del backend
+
 Las 82 pruebas Django presentes en esta rama pasaron con PostgreSQL 18.7:
 
 | Medida | Cubierto / total | Porcentaje |
@@ -137,24 +137,14 @@ Las 82 pruebas Django presentes en esta rama pasaron con PostgreSQL 18.7:
 | Indicador combinado | 817 / 1307 | 62,51 % |
 
 Estos valores corresponden exclusivamente a las pruebas presentes en esta rama.
-No incluyen pruebas que permanezcan en otras ramas sin integrar. Deben volver
-a medirse con el codigo que se vaya a presentar en el informe del sprint.
 
 Las zonas con menor cobertura incluyen servicios de usuarios y partes de
 serializers y vistas de usuarios/eventos. El HTML muestra las lineas concretas
-sin ejecutar; su seleccion para nuevas pruebas requiere revisar los requisitos.
+sin ejecutar.
 
-La descarga real de artifacts desde GitHub y el ensayo de fallo controlado
-quedan para la validacion final posterior. No se han simulado ni declarado
-completados en esta etapa.
+### Recorridos E2E
 
-Referencias: [upload-artifact](https://github.com/actions/upload-artifact),
-[medicion con coverage.py](https://coverage.readthedocs.io/en/latest/commands/cmd_run.html).
-
-La validacion E2E de esta etapa ejecuto las 26 copias CI sobre una base nueva:
-**26 aprobadas en 3,6 minutos, 0 fallidas, 0 omitidas y 0 inestables**. No hubo
-reintentos. Se generaron el HTML, `resultados.json` y 35 capturas PNG.
-Al no fallar casos no se conservaron trazas; la retencion ante fallo se verificara
-en la etapa final. Se comprobo la sintaxis del YAML, los caminos de subida y
-que las carpetas generadas quedan fuera de Git. Los servidores de la aplicacion
-y el PostgreSQL temporal se detuvieron al terminar.
+Las 26 copias CI se ejecutaron sobre una base nueva: **26 aprobadas en
+3,6 minutos, 0 fallidas, 0 omitidas y 0 inestables**. No hubo reintentos. Se
+generaron el HTML, `resultados.json` y 35 capturas PNG. Al no fallar casos no
+se conservaron trazas.
