@@ -1,16 +1,12 @@
 # PostgreSQL para pruebas del backend y E2E
 
-No se necesita crear otra base de datos ni otro proyecto en Supabase.
-Las pruebas utilizan un servidor PostgreSQL desechable. En GitHub Actions lo
-inicia automaticamente un contenedor de servicio; localmente puede utilizarse
-un contenedor o una instalacion propia exclusiva de pruebas.
+Las pruebas no usan Supabase: emplean un servidor PostgreSQL desechable. En
+GitHub Actions lo inicia automaticamente un contenedor de servicio; localmente
+puede utilizarse un contenedor o una instalacion propia exclusiva de pruebas.
 
 ## Como se conectan las piezas
 
-```text
-Backend en CI: tests de Django -> ORM -> PostgreSQL (test_conecta_ci)
-E2E: Playwright -> navegador -> React -> API Django -> ORM -> PostgreSQL (conecta_e2e)
-```
+Playwright -> navegador -> React -> API Django -> ORM -> PostgreSQL (conecta_e2e)
 
 El ORM traduce las operaciones de los modelos a SQL. Las migraciones crean las
 tablas y restricciones. `psycopg`, ya incluido en las dependencias, transporta
@@ -22,10 +18,6 @@ la aplicacion accede a los datos a traves de la API.
 | `settings_test.py` | SQLite en memoria; Django la crea y descarta. | Alternativa local rapida, sin servidor PostgreSQL. |
 | `settings_ci.py` | Django crea `test_conecta_ci`, aplica migraciones y la elimina al terminar. | Todos los tests del backend en CI, incluidas las pruebas de integracion. |
 | `settings_e2e.py` | Base vacia `conecta_e2e` o con prefijo `conecta_e2e_`; se migra y puebla antes de iniciar la API. | Estado compartido entre el comando de preparacion y el servidor E2E. |
-
-Cambiar el motor no convierte una prueba unitaria en una prueba de integracion.
-La clasificacion depende de que componentes comprueba. Las pruebas que pasan
-por API, modelos y base de datos comprueban su integracion.
 
 ## Configuracion y aislamiento
 
@@ -61,11 +53,7 @@ Carpeta temporal:
 permanecen al detener Django para poder inspeccionarlos. En CI, cada job usa su
 propio servidor y carpeta; GitHub elimina el contenedor al finalizar el job.
 No se comparte base entre los jobs ni entre ejecuciones del workflow.
-
-Se fija PostgreSQL 18 en CI. No se ha confirmado la version principal del
-servidor Supabase del proyecto. Usar el mismo motor mejora la fidelidad de las
-pruebas, pero no verifica las politicas, extensiones, permisos o infraestructura
-especificos de Supabase, ni añade por si solo pruebas de concurrencia.
+Se fija PostgreSQL 18 en CI.
 
 ## Datos que se crean
 
@@ -83,10 +71,12 @@ especificos de Supabase, ni añade por si solo pruebas de concurrencia.
 - Ocho versiones PDF iniciales, guardadas en disco local. Las pruebas de nueva
   postulacion y subida seguiran creando sus propios articulos por la interfaz.
 
-La conferencia abierta usa temporalmente el ID `4` para conservar el selector
+En total quedan preparados 10 usuarios, 2 conferencias, 8 fechas limite,
+8 articulos, 9 autorias y 8 archivos PDF.
+
+La conferencia abierta usa el ID fijo `4` para conservar el selector
 existente de consulta. Se actualiza la secuencia de PostgreSQL despues de
-insertar los IDs fijos para evitar colisiones al crear otras conferencias. Los otros IDs pueden consultarse en `datos-e2e.json`;
-no se asume el ID `14` del comentario de restauracion manual del coautor.
+insertar los IDs fijos para evitar colisiones al crear otras conferencias. Los otros IDs pueden consultarse en `datos-e2e.json`.
 Los articulos en revision se preparan en ese estado para probar los filtros;
 esta preparacion no representa un ensayo de asignacion de revisores o evaluacion.
 
@@ -106,8 +96,7 @@ usen sus cuentas reales: estos registros solo existen en la nueva base local.
 
 `CI=1` activa opciones de Playwright; **no inicia PostgreSQL, no crea las bases
 ni exporta variables**. GitHub hace esos pasos mediante el workflow. Localmente
-hay que prepararlos antes. El entorno temporal usado por el asistente se detiene
-al terminar y sus variables no pasan a la terminal del desarrollador.
+hay que prepararlos antes.
 
 Si aparece `password authentication failed for user "conecta_test"` en el puerto
 5432, Django alcanzo un servidor PostgreSQL, pero ese servidor rechazo las
@@ -192,6 +181,8 @@ python manage.py test --settings=config.settings_ci --noinput --verbosity 2
 nombre, Django puede recrearla. Por eso este servidor debe ser exclusivo de
 pruebas. No ejecutar dos suites simultaneas contra el mismo `test_conecta_ci`.
 
+Referencia: [bases de datos de pruebas de Django](https://docs.djangoproject.com/en/6.1/topics/testing/overview/).
+
 ## Preparar y ejecutar el backend E2E manualmente
 
 Crear una base E2E vacia en ese servidor (solo una vez para ese nombre):
@@ -238,7 +229,7 @@ necesita datos. Define usuario, contraseña ficticia y base inicial. El chequeo
 Los procesos Python corren en Ubuntu y acceden al puerto local 5432 del servicio.
 
 - `Backend - comprobaciones y pruebas`: ejecuta la suite existente con
-  `settings_ci`. Los nombres de los checks existentes se conservan.
+  `settings_ci`.
 - `E2E - recorridos aislados`: prepara PostgreSQL y los datos, instala frontend,
   Playwright y Chromium, y ejecuta las copias de `tests-ci/`. Playwright inicia
   y detiene los servidores mediante `webServer`. Su limite es de 20 minutos.
@@ -248,6 +239,8 @@ Los dos servicios pueden publicar el puerto 5432 porque sus jobs se ejecutan
 en maquinas distintas. No hay que crear bases en Supabase ni configurar
 GitHub Secrets para estas credenciales ficticias. Los reportes y capturas se publican como artifacts durante 30 dias; ver
 [reportes y cobertura](reportes-pruebas.md).
+
+Referencia: [servicios PostgreSQL en GitHub Actions](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers).
 
 ## Frontend y variables de las pruebas
 
@@ -272,61 +265,14 @@ export E2E_PASSWORD='ClaveSegura123'
 
 La configuracion E2E usa la clave publica de pruebas del backend de reCAPTCHA
 v2 y el frontend usa su pareja. Son las claves que Google publica para pruebas,
-no credenciales de una base de datos. Todavia se carga el widget y se consulta
-Google: **la dependencia de red del CAPTCHA sigue existiendo**. No se ha añadido
-un bypass al login ni se ha simulado la API de la aplicacion.
+no credenciales de una base de datos. El widget se carga y se consulta Google,
+por lo que **las pruebas requieren acceso de red al servicio de CAPTCHA**. El
+login no tiene ningun bypass ni se simula la API de la aplicacion.
 Referencia: [claves de pruebas de reCAPTCHA](https://developers.google.com/recaptcha/docs/faq).
 
 Los correos se escriben mediante el backend de archivos de Django, con
 `MAILERS`. No salen a destinatarios reales. Referencia:
 [correo en archivos](https://docs.djangoproject.com/en/6.1/topics/email/#file-backend).
-
-## Limites de esta etapa
-
-Ya existe la preparacion inicial de base, archivos y datos. Se incorporo el restablecimiento
-antes de cada caso y reintento. El arranque y la ejecucion del navegador
-ya estan configurados. La publicacion de artifacts esta configurada; falta verificar el workflow
-modificado y la descarga de esos archivos en GitHub. Una base y carpeta nuevas
-por job no resuelven por si solas los cambios durante ese mismo job.
-
-Los casos de crear conferencia y configurar fechas limite siguen pendientes
-de disponibilidad en `main`. No se han omitido del alcance ni se han dado por
-aprobados. Los 26 casos disponibles pasaron localmente con el frontend
-compilado; esto no cubre esos dos casos faltantes ni sustituye la ejecucion
-del workflow en GitHub.
-
-## Comprobaciones realizadas
-
-El 23 de noviembre de 2026 se verifico con PostgreSQL 18.7 instalado localmente,
-en un servidor temporal exclusivo en el puerto 15432:
-
-- Las 82 pruebas del backend de esta rama pasaron con `settings_ci`. Django
-  creo `test_conecta_ci` y se comprobo que la elimino al terminar. Las pruebas
-  adicionales de acceso de la rama independiente se incorporaran cuando se
-  integren; no se eliminaron ni se excluyeron del descubrimiento.
-- `check` paso y `makemigrations --check --dry-run` no encontro cambios, tanto
-  con `settings_ci` como con `settings_e2e`.
-- Dos bases E2E distintas produjeron los mismos datos de referencia: 10 usuarios,
-  2 conferencias, 8 fechas limite, 8 articulos, 9 autorias y 8 archivos PDF.
-  Se comprobaron contraseñas, roles y plazos de postulacion.
-- Cambiar un contador en una base no afecto a la otra. Reutilizar una carpeta,
-  preparar una base con tablas o usar otra configuracion fue rechazado sin borrar
-  datos. Una conferencia nueva obtuvo ID 6 despues de las conferencias 4 y 5.
-- Desde otro proceso, el cliente de pruebas de Django completo login con JWT,
-  consulta del articulo y entrega del PDF local. Tambien se comprobo el correo
-  en archivo. Solo en esta verificacion se controlo la respuesta externa de
-  CAPTCHA; la aplicacion conserva la consulta a Google.
-- El YAML se pudo analizar y se comprobaron los nombres de checks, eventos y
-  correspondencia de credenciales entre servicios y configuracion.
-
-Se detuvo el servidor temporal al finalizar. No se instalaron dependencias ni
-se accedio a Supabase. Los comandos Docker de esta guia estan documentados,
-pero la validacion local utilizo los binarios PostgreSQL instalados. Aun no
-se ejecuto el workflow modificado en GitHub ni se probaron recorridos completos
-con navegador; un YAML valido no demuestra por si solo que el workflow pase.
-
-Referencias: [servicios PostgreSQL en GitHub Actions](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers)
-y [bases de datos de pruebas de Django](https://docs.djangoproject.com/en/6.1/topics/testing/overview/).
 
 ## Adaptacion de los recorridos existentes
 
@@ -367,8 +313,7 @@ Despues ejecuta `restablecer_e2e` mediante el Python del backend. Este comando
 **vacia los datos de la base E2E preparada**, limpia sus carpetas `media` y
 `correos` y vuelve a crear las precondiciones. Exige `settings_e2e`, conexion
 local, nombre de base E2E, almacenamiento local y un manifiesto de preparacion
-que coincida con la base. Una carpeta preparada con una version antigua sin el
-campo `base` requiere volver a preparar un entorno nuevo.
+que coincida con la base.
 
 Esto restaura el coautor eliminado, los bloqueos, perfiles, titulos y tokens,
 y elimina los usuarios y articulos generados por el caso anterior. Se hace al
@@ -407,18 +352,8 @@ Si un compañero corrige un recorrido original, revisar y trasladar el cambio
 funcional a su copia CI, conservando su preparacion aislada. Las copias no se
 sincronizan automaticamente; esta separacion requiere ese mantenimiento.
 
-La adaptacion conserva los 26 casos y sus aserciones. Los dos casos del equipo
-que faltan no se han inventado ni omitido del alcance pendiente.
+La adaptacion conserva los 26 casos y sus aserciones.
 Referencia: [fixtures de Playwright](https://playwright.dev/docs/test-fixtures).
-
-Comprobaciones de esta adaptacion: descubrimiento de 26 casos en 12 archivos
-con y sin modo aislado; mismos nombres y cantidad de aserciones que antes;
-dos restablecimientos sobre PostgreSQL 18.7 recuperaron coautor, cuenta
-bloqueada, titulo y cantidades iniciales, y eliminaron archivos sobrantes.
-Se verifico el rechazo de configuracion habitual y de un nombre de base ajeno,
-y que la ruta de identificacion no existe en `config.urls`. Estas comprobaciones iniciales no ejecutaron
-pasos del navegador; la validacion del arranque se registra a continuacion.
-
 
 ## Arranque automatico y ejecucion de las copias CI
 
@@ -467,53 +402,11 @@ Para consultar el reporte terminado, desde `e2e/`:
 npx playwright show-report
 ```
 
-Estas carpetas ya estan ignoradas por `e2e/.gitignore`. No se toco el `.gitignore`
-de la raiz ni las imagenes versionadas en `evidencias/`. Playwright reutiliza
+Estas carpetas estan ignoradas por `e2e/.gitignore`. Las imagenes versionadas
+en `evidencias/` no se sobrescriben. Playwright reutiliza
 las carpetas de salida: copiar un reporte antes de otra ejecucion si se desea
 conservarlo. En GitHub, los logs del job quedan consultables, pero los archivos
 HTML, capturas, JSON y trazas disponibles se suben mediante `upload-artifact`
 y se conservan durante 30 dias. Ver [reportes y cobertura](reportes-pruebas.md).
 
 Referencia: [arranque de servidores con Playwright](https://playwright.dev/docs/test-webserver).
-
-### Incidencias encontradas en el frontend de desarrollo
-
-La primera ejecucion completa se hizo con `npm run dev`. Se observaron dos
-respuestas iniciales de perfil y de usuarios, asociadas al montaje con
-`StrictMode` en `frontend/src/main.jsx`. Una respuesta tardia restauro el apellido
-vaciado por el caso negativo; otra reemplazo el listado filtrado de administrador
-por la lista completa. Los logs mostraron la respuesta filtrada seguida de la
-respuesta inicial sin filtros. Las aserciones detectaron ambos problemas.
-
-`PerfilPage.jsx` y `UsuariosPage.jsx` cargan datos en efectos sin cancelar ni
-ignorar respuestas obsoletas. Esta condicion de carrera queda pendiente de
-revision por el equipo frontend. No se modificaron esos componentes ni se
-eliminaron las aserciones. Aunque se observo con el montaje doble de desarrollo,
-no se afirma que otros escenarios de respuestas fuera de orden sean imposibles
-en produccion.
-
-La configuracion final de CI compila y sirve el frontend con `vite preview`,
-para comprobar los archivos que se preparan para despliegue. Esto no corrige
-el problema de los efectos ni reemplaza su seguimiento. Se conserva StrictMode
-en el codigo de la aplicacion. Referencia: [comprobaciones de efectos en modo estricto](https://react.dev/reference/react/StrictMode).
-
-
-### Validacion final del arranque automatico
-
-El 23 de noviembre de 2026 se ejecuto el conjunto completo sobre una base
-PostgreSQL nueva, con `CI=1` y la configuracion `playwright.ci.config.js`:
-**26 casos pasaron en 3,3 minutos, sin fallos ni reintentos**. Se utilizo
-Chromium, el frontend compilado y el CAPTCHA real con las claves publicas de
-prueba. No se modificaron las aserciones para obtener ese resultado.
-
-La ejecucion comprobo el arranque automatico, la disponibilidad de ambos
-servidores y el restablecimiento de datos antes de cada caso. Al terminar se
-verifico que los puertos de Django y Vite quedaron cerrados; despues se detuvo
-el PostgreSQL temporal de la validacion. Los originales en `e2e/tests/` y
-`playwright.config.js` coinciden con su version guardada en Git.
-
-En esa validacion inicial el YAML tenia tres jobs sin publicacion de artifacts;
-la etapa posterior añade esa publicacion y se describe en la guia de reportes. Los reportes
-locales quedaron en las carpetas indicadas arriba. El workflow modificado aun
-no se ha ejecutado en GitHub; la publicacion y el ensayo remoto siguen
-pendientes de validacion.
